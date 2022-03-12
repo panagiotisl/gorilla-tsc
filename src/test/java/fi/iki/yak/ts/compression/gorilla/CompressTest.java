@@ -85,7 +85,7 @@ public class CompressTest {
 		Collection<Double> values;
 		while ((values = timeseriesFileReader.nextBlock()) != null) {
 			Compressor32 compressor = new Compressor32(0, new ByteBufferBitOutput());
-			values.forEach(value -> compressor.addValue(0, value.floatValue()));
+			values.forEach(value -> compressor.addValue(value.floatValue()));
 	        compressor.close();
 	        totalSize += compressor.getSize();
 	        totalBlocks += 1;
@@ -101,7 +101,7 @@ public class CompressTest {
 		while ((values = timeseriesFileReader.nextBlock()) != null) {
 			ByteBufferBitOutput output = new ByteBufferBitOutput();
 			Compressor32 compressor = new Compressor32(0, output);
-			values.forEach(value -> compressor.addValue(0, value.floatValue()));
+			values.forEach(value -> compressor.addValue(value.floatValue()));
 	        compressor.close();
 
 	        ByteBuffer byteBuffer = output.getByteBuffer();
@@ -109,10 +109,10 @@ public class CompressTest {
 	        ByteBufferBitInput input = new ByteBufferBitInput(byteBuffer);
 	        Decompressor32 d = new Decompressor32(input);
 	        for(Double value : values) {
-	            Pair32 pair = d.readPair();
+	            Value pair = d.readValue();
 	            assertEquals(value.floatValue(), pair.getFloatValue(), "Value did not match");
 	        }
-	        assertNull(d.readPair());
+	        assertNull(d.readValue());
 		}
 	}
 
@@ -127,7 +127,7 @@ public class CompressTest {
 		while ((values = timeseriesFileReader.nextBlock()) != null) {
 			ByteBufferBitOutput output = new ByteBufferBitOutput();
 			Compressor32 compressor = new Compressor32(0, output);
-			values.forEach(value -> compressor.addValue(0, value.floatValue()));
+			values.forEach(value -> compressor.addValue(value.floatValue()));
 	        compressor.close();
 
 	        ByteBuffer byteBuffer = output.getByteBuffer();
@@ -137,12 +137,12 @@ public class CompressTest {
 	        for(Double value : values) {
 	        	maxValue = value > maxValue ? value : maxValue;
 	        	minValue = value < minValue ? value : minValue;
-	            Pair32 pair = d.readPair();
+	            Value pair = d.readValue();
 	            double precisionError = Math.abs(value.doubleValue() - pair.getFloatValue());
 	            maxPrecisionError = (precisionError > maxPrecisionError) ? precisionError : maxPrecisionError;
 	            assertEquals(value.doubleValue(), pair.getFloatValue(), 0.00001, "Value did not match");
 	        }
-	        assertNull(d.readPair());
+	        assertNull(d.readValue());
 		}
 		System.out.println(String.format("%s - Max precision error: %e, Range: %f, (error/range %%: %e)", filename, maxPrecisionError, (maxValue - minValue), maxPrecisionError / (maxValue - minValue)));
 	}
@@ -173,7 +173,7 @@ public class CompressTest {
 		Collection<Double> values;
 		while ((values = timeseriesFileReader.nextBlock()) != null) {
 			Compressor32 compressor = new Compressor32(0, new ByteBufferBitOutput());
-			values.forEach(value -> compressor.addValue(0, value.floatValue()));
+			values.forEach(value -> compressor.addValue(value.floatValue()));
 	        compressor.close();
 	        totalSize += compressor.getSize();
 	        totalBlocks += 1;
@@ -189,7 +189,7 @@ public class CompressTest {
 		while ((values = timeseriesFileReader.nextBlock()) != null) {
 			ByteBufferBitOutput output = new ByteBufferBitOutput();
 			Compressor32 compressor = new Compressor32(0, output);
-			values.forEach(value -> compressor.addValue(0, value.floatValue()));
+			values.forEach(value -> compressor.addValue(value.floatValue()));
 	        compressor.close();
 
 	        ByteBuffer byteBuffer = output.getByteBuffer();
@@ -197,10 +197,10 @@ public class CompressTest {
 	        ByteBufferBitInput input = new ByteBufferBitInput(byteBuffer);
 	        Decompressor32 d = new Decompressor32(input);
 	        for(Double value : values) {
-	            Pair32 pair = d.readPair();
+	            Value pair = d.readValue();
 	            assertEquals(value.floatValue(), pair.getFloatValue(), "Value did not match");
 	        }
-	        assertNull(d.readPair());
+	        assertNull(d.readValue());
 		}
 	}
 
@@ -215,7 +215,7 @@ public class CompressTest {
 		while ((values = timeseriesFileReader.nextBlock()) != null) {
 			ByteBufferBitOutput output = new ByteBufferBitOutput();
 			Compressor32 compressor = new Compressor32(0, output);
-			values.forEach(value -> compressor.addValue(0, value.floatValue()));
+			values.forEach(value -> compressor.addValue(value.floatValue()));
 	        compressor.close();
 
 	        ByteBuffer byteBuffer = output.getByteBuffer();
@@ -225,12 +225,12 @@ public class CompressTest {
 	        for(Double value : values) {
 	        	maxValue = value > maxValue ? value : maxValue;
 	        	minValue = value < minValue ? value : minValue;
-	            Pair32 pair = d.readPair();
+	            Value pair = d.readValue();
 	            double precisionError = Math.abs(value.doubleValue() - pair.getFloatValue());
 	            maxPrecisionError = (precisionError > maxPrecisionError) ? precisionError : maxPrecisionError;
 	            assertEquals(value.doubleValue(), pair.getFloatValue(), 0.00001, "Value did not match");
 	        }
-	        assertNull(d.readPair());
+	        assertNull(d.readValue());
 		}
 		System.out.println(String.format("%s - Max precision error: %e, Range: %f, (error/range %%: %e)", filename, maxPrecisionError, (maxValue - minValue), maxPrecisionError / (maxValue - minValue)));
 	}

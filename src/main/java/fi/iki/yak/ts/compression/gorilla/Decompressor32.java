@@ -27,12 +27,12 @@ public class Decompressor32 {
      *
      * @return Pair if there's next value, null if series is done.
      */
-    public Pair32 readPair() {
+    public Value readValue() {
         next();
         if(endOfStream) {
             return null;
         }
-        return new Pair32(0, storedVal);
+        return new Value(storedVal);
     }
 
     private void next() {

@@ -31,9 +31,9 @@ public class Compressor32 {
      * @param timestamp Timestamp which is inside the allowed time block (default 24 hours with millisecond precision)
      * @param value next floating point value in the series
      */
-    public void addValue(long timestamp, int value) {
+    public void addValue(int value) {
         if(first) {
-            writeFirst(timestamp, value);
+            writeFirst(value);
         } else {
             compressValue(value);
         }
@@ -45,15 +45,15 @@ public class Compressor32 {
      * @param timestamp Timestamp which is inside the allowed time block (default 24 hours with millisecond precision)
      * @param value next floating point value in the series
      */
-    public void addValue(long timestamp, float value) {
+    public void addValue(float value) {
         if(first) {
-            writeFirst(timestamp, Float.floatToRawIntBits(value));
+            writeFirst(Float.floatToRawIntBits(value));
         } else {
             compressValue(Float.floatToRawIntBits(value));
         }
     }
 
-    private void writeFirst(long timestamp, int value) {
+    private void writeFirst(int value) {
     	first = false;
         storedVal = value;
         out.writeBits(storedVal, 32);
@@ -64,7 +64,7 @@ public class Compressor32 {
      * Closes the block and writes the remaining stuff to the BitOutput.
      */
     public void close() {
-    	addValue(0, Float.NaN);
+    	addValue(Float.NaN);
         out.skipBit();
         out.flush();
     }

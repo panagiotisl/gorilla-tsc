@@ -5,17 +5,11 @@ package fi.iki.yak.ts.compression.gorilla;
  *
  * @author Michael Burman
  */
-public class Pair32 {
-    private long timestamp;
+public class Value {
     private int value;
 
-    public Pair32(long timestamp, int value) {
-        this.timestamp = timestamp;
+    public Value(int value) {
         this.value = value;
-    }
-
-    public long getTimestamp() {
-        return timestamp;
     }
 
     public float getFloatValue() {
