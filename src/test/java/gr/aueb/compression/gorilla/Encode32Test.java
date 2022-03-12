@@ -1,4 +1,4 @@
-package fi.iki.yak.ts.compression.gorilla;
+package gr.aueb.compression.gorilla;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -12,6 +12,9 @@ import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.junit.jupiter.api.Test;
+
+import fi.iki.yak.ts.compression.gorilla.ByteBufferBitInput;
+import fi.iki.yak.ts.compression.gorilla.ByteBufferBitOutput;
 
 /**
  * These are generic tests to test that input matches the output after compression + decompression cycle, using

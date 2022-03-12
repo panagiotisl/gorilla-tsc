@@ -1,4 +1,4 @@
-package fi.iki.yak.ts.compression.gorilla;
+package gr.aueb.compression.gorilla;
 
 /**
  * Pair is an extracted timestamp,value pair from the stream

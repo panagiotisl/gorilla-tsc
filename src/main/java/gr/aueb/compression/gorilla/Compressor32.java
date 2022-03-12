@@ -1,4 +1,6 @@
-package fi.iki.yak.ts.compression.gorilla;
+package gr.aueb.compression.gorilla;
+
+import fi.iki.yak.ts.compression.gorilla.BitOutput;
 
 /**
  * Implements the time series compression as described in the Facebook's Gorilla Paper. Value compression
