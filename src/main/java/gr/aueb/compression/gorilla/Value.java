@@ -1,7 +1,7 @@
 package gr.aueb.compression.gorilla;
 
 /**
- * Pair is an extracted timestamp,value pair from the stream
+ * Value is an extracted value from the stream
  *
  * @author Michael Burman
  */

@@ -4,10 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.nio.ByteBuffer;
-import java.time.LocalDateTime;
-import java.time.Month;
-import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -24,9 +20,9 @@ import fi.iki.yak.ts.compression.gorilla.ByteBufferBitOutput;
  */
 public class Encode32Test {
 
-    private void comparePairsToCompression(long blockTimestamp, Value[] pairs) {
+    private void comparePairsToCompression(Value[] pairs) {
         ByteBufferBitOutput output = new ByteBufferBitOutput();
-        Compressor32 c = new Compressor32(blockTimestamp, output);
+        Compressor32 c = new Compressor32(output);
         Arrays.stream(pairs).forEach(p -> c.addValue(p.getFloatValue()));
         c.close();
         System.out.println("Size: " + c.getSize());
@@ -48,10 +44,8 @@ public class Encode32Test {
 
     @Test
     void simpleEncodeAndDecodeTest() throws Exception {
-        long now = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
-                .toInstant(ZoneOffset.UTC).toEpochMilli();
 
-        Value[] pairs = {
+        Value[] values = {
                 new Value(Float.floatToRawIntBits((float) 1.0)),
                 new Value(Float.floatToRawIntBits((float) -2.0)),
                 new Value(Float.floatToRawIntBits((float) -2.5)),
@@ -62,14 +56,12 @@ public class Encode32Test {
                 new Value(Float.floatToRawIntBits((float) -38.0)),
         };
 
-        comparePairsToCompression(now, pairs);
+        comparePairsToCompression(values);
     }
 
     @Test
     public void willItBlend() throws Exception {
-        long blockTimestamp = 1500400800000L;
-
-        Value[] pairs = {
+        Value[] values = {
                 new Value(69087),
                 new Value(65640),
                 new Value(58155),
@@ -326,7 +318,7 @@ public class Encode32Test {
                 new Value(44081)
         };
 
-        comparePairsToCompression(blockTimestamp, pairs);
+        comparePairsToCompression(values);
     }
 
     /**
@@ -334,10 +326,8 @@ public class Encode32Test {
      */
     @Test
     void testEncodeSimilarFloats() throws Exception {
-        long now = LocalDateTime.of(2015, Month.MARCH, 02, 00, 00).toInstant(ZoneOffset.UTC).toEpochMilli();
-
         ByteBufferBitOutput output = new ByteBufferBitOutput();
-        Compressor32 c = new Compressor32(now, output);
+        Compressor32 c = new Compressor32(output);
 
         ByteBuffer bb = ByteBuffer.allocate(5 * 2*Long.BYTES);
 
@@ -380,18 +370,15 @@ public class Encode32Test {
     void testEncodeLargeAmountOfData() throws Exception {
         // This test should trigger ByteBuffer reallocation
         int amountOfPoints = 100000;
-        long blockStart = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
-                .toInstant(ZoneOffset.UTC).toEpochMilli();
         ByteBufferBitOutput output = new ByteBufferBitOutput();
 
-        long now = blockStart + 60;
         ByteBuffer bb = ByteBuffer.allocateDirect(amountOfPoints * 2*Long.BYTES);
 
         for(int i = 0; i < amountOfPoints; i++) {
             bb.putFloat((float) (i * Math.random()));
         }
 
-        Compressor32 c = new Compressor32(blockStart, output);
+        Compressor32 c = new Compressor32(output);
 
         bb.flip();
 
@@ -423,12 +410,9 @@ public class Encode32Test {
      */
     @Test
     void testEmptyBlock() throws Exception {
-        long now = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
-                .toInstant(ZoneOffset.UTC).toEpochMilli();
-
         ByteBufferBitOutput output = new ByteBufferBitOutput();
 
-        Compressor32 c = new Compressor32(now, output);
+        Compressor32 c = new Compressor32(output);
         c.close();
         System.out.println("Size: " + c.getSize());
 
@@ -445,18 +429,15 @@ public class Encode32Test {
     void testLongEncoding() throws Exception {
         // This test should trigger ByteBuffer reallocation
         int amountOfPoints = 10000;
-        long blockStart = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
-                .toInstant(ZoneOffset.UTC).toEpochMilli();
         ByteBufferBitOutput output = new ByteBufferBitOutput();
 
-        long now = blockStart + 60;
         ByteBuffer bb = ByteBuffer.allocateDirect(amountOfPoints * 2*Long.BYTES);
 
         for(int i = 0; i < amountOfPoints; i++) {
             bb.putInt((int) ThreadLocalRandom.current().nextLong(Integer.MAX_VALUE));
         }
 
-        Compressor32 c = new Compressor32(blockStart, output);
+        Compressor32 c = new Compressor32(output);
 
         bb.flip();
 

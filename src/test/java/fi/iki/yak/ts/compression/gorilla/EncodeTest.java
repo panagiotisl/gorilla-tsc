@@ -21,10 +21,10 @@ import org.junit.jupiter.api.Test;
  */
 public class EncodeTest {
 
-    private void comparePairsToCompression(long blockTimestamp, Pair[] pairs) {
+    private void comparePairsToCompression(long blockTimestamp, Value[] pairs) {
         ByteBufferBitOutput output = new ByteBufferBitOutput();
-        Compressor c = new Compressor(blockTimestamp, output);
-        Arrays.stream(pairs).forEach(p -> c.addValue(p.getTimestamp(), p.getDoubleValue()));
+        Compressor c = new Compressor(output);
+        Arrays.stream(pairs).forEach(p -> c.addValue(p.getDoubleValue()));
         c.close();
         System.out.println("Size: " + c.getSize());
 
@@ -36,8 +36,7 @@ public class EncodeTest {
 
         // Replace with stream once decompressor supports it
         for(int i = 0; i < pairs.length; i++) {
-            Pair pair = d.readPair();
-//            assertEquals(pairs[i].getTimestamp(), pair.getTimestamp(), "Timestamp did not match");
+            Value pair = d.readPair();
             assertEquals(pairs[i].getDoubleValue(), pair.getDoubleValue(), "Value did not match");
         }
 
@@ -49,15 +48,15 @@ public class EncodeTest {
         long now = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
                 .toInstant(ZoneOffset.UTC).toEpochMilli();
 
-        Pair[] pairs = {
-                new Pair(now + 10, Double.doubleToRawLongBits(1.0)),
-                new Pair(now + 20, Double.doubleToRawLongBits(-2.0)),
-                new Pair(now + 28, Double.doubleToRawLongBits(-2.5)),
-                new Pair(now + 84, Double.doubleToRawLongBits(65537)),
-                new Pair(now + 400, Double.doubleToRawLongBits(2147483650.0)),
-                new Pair(now + 2300, Double.doubleToRawLongBits(-16384)),
-                new Pair(now + 16384, Double.doubleToRawLongBits(2.8)),
-                new Pair(now + 16500, Double.doubleToRawLongBits(-38.0)),
+        Value[] pairs = {
+                new Value(Double.doubleToRawLongBits(1.0)),
+                new Value(Double.doubleToRawLongBits(-2.0)),
+                new Value(Double.doubleToRawLongBits(-2.5)),
+                new Value(Double.doubleToRawLongBits(65537)),
+                new Value(Double.doubleToRawLongBits(2147483650.0)),
+                new Value(Double.doubleToRawLongBits(-16384)),
+                new Value(Double.doubleToRawLongBits(2.8)),
+                new Value(Double.doubleToRawLongBits(-38.0)),
         };
 
         comparePairsToCompression(now, pairs);
@@ -67,262 +66,263 @@ public class EncodeTest {
     public void willItBlend() throws Exception {
         long blockTimestamp = 1500400800000L;
 
-        Pair[] pairs = {
-                new Pair(1500405481623L, 69087),
-                new Pair(1500405488693L, 65640),
-                new Pair(1500405495993L, 58155),
-                new Pair(1500405503743L, 61025),
-                new Pair(1500405511623L, 91156),
-                new Pair(1500405519803L, 37516),
-                new Pair(1500405528313L, 93515),
-                new Pair(1500405537233L, 96226),
-                new Pair(1500405546453L, 23833),
-                new Pair(1500405556103L, 73186),
-                new Pair(1500405566143L, 96947),
-                new Pair(1500405576163L, 46927),
-                new Pair(1500405586173L, 77954),
-                new Pair(1500405596183L, 29302),
-                new Pair(1500405606213L, 6700),
-                new Pair(1500405616163L, 71971),
-                new Pair(1500405625813L, 8528),
-                new Pair(1500405635763L, 85321),
-                new Pair(1500405645634L, 83229),
-                new Pair(1500405655633L, 78298),
-                new Pair(1500405665623L, 87122),
-                new Pair(1500405675623L, 82055),
-                new Pair(1500405685723L, 75067),
-                new Pair(1500405695663L, 33680),
-                new Pair(1500405705743L, 17576),
-                new Pair(1500405715813L, 89701),
-                new Pair(1500405725773L, 21427),
-                new Pair(1500405735883L, 58255),
-                new Pair(1500405745903L, 3768),
-                new Pair(1500405755863L, 62086),
-                new Pair(1500405765843L, 66965),
-                new Pair(1500405775773L, 35801),
-                new Pair(1500405785883L, 72169),
-                new Pair(1500405795843L, 43089),
-                new Pair(1500405805733L, 31418),
-                new Pair(1500405815853L, 84781),
-                new Pair(1500405825963L, 36103),
-                new Pair(1500405836004L, 87431),
-                new Pair(1500405845953L, 7379),
-                new Pair(1500405855913L, 66919),
-                new Pair(1500405865963L, 30906),
-                new Pair(1500405875953L, 88630),
-                new Pair(1500405885943L, 27546),
-                new Pair(1500405896033L, 43813),
-                new Pair(1500405906094L, 2124),
-                new Pair(1500405916063L, 49399),
-                new Pair(1500405926143L, 94577),
-                new Pair(1500405936123L, 98459),
-                new Pair(1500405946033L, 49457),
-                new Pair(1500405956023L, 92838),
-                new Pair(1500405966023L, 15628),
-                new Pair(1500405976043L, 53916),
-                new Pair(1500405986063L, 90387),
-                new Pair(1500405996123L, 43176),
-                new Pair(1500406006123L, 18838),
-                new Pair(1500406016174L, 78847),
-                new Pair(1500406026173L, 39591),
-                new Pair(1500406036004L, 77070),
-                new Pair(1500406045964L, 56788),
-                new Pair(1500406056043L, 96706),
-                new Pair(1500406066123L, 20756),
-                new Pair(1500406076113L, 64433),
-                new Pair(1500406086133L, 45791),
-                new Pair(1500406096123L, 75028),
-                new Pair(1500406106193L, 55403),
-                new Pair(1500406116213L, 36991),
-                new Pair(1500406126073L, 92929),
-                new Pair(1500406136103L, 60416),
-                new Pair(1500406146183L, 55485),
-                new Pair(1500406156383L, 53525),
-                new Pair(1500406166313L, 96021),
-                new Pair(1500406176414L, 22705),
-                new Pair(1500406186613L, 89801),
-                new Pair(1500406196543L, 51975),
-                new Pair(1500406206483L, 86741),
-                new Pair(1500406216483L, 22440),
-                new Pair(1500406226433L, 51818),
-                new Pair(1500406236403L, 61965),
-                new Pair(1500406246413L, 19074),
-                new Pair(1500406256494L, 54521),
-                new Pair(1500406266413L, 59315),
-                new Pair(1500406276303L, 19171),
-                new Pair(1500406286213L, 98800),
-                new Pair(1500406296183L, 7086),
-                new Pair(1500406306103L, 60578),
-                new Pair(1500406316073L, 96828),
-                new Pair(1500406326143L, 83746),
-                new Pair(1500406336153L, 85481),
-                new Pair(1500406346113L, 22346),
-                new Pair(1500406356133L, 80976),
-                new Pair(1500406366065L, 43586),
-                new Pair(1500406376074L, 82500),
-                new Pair(1500406386184L, 13576),
-                new Pair(1500406396113L, 77871),
-                new Pair(1500406406094L, 60978),
-                new Pair(1500406416203L, 35264),
-                new Pair(1500406426323L, 79733),
-                new Pair(1500406436343L, 29140),
-                new Pair(1500406446323L, 7237),
-                new Pair(1500406456344L, 52866),
-                new Pair(1500406466393L, 88456),
-                new Pair(1500406476493L, 33533),
-                new Pair(1500406486524L, 96961),
-                new Pair(1500406496453L, 16389),
-                new Pair(1500406506453L, 31181),
-                new Pair(1500406516433L, 63282),
-                new Pair(1500406526433L, 92857),
-                new Pair(1500406536413L, 4582),
-                new Pair(1500406546383L, 46832),
-                new Pair(1500406556473L, 6335),
-                new Pair(1500406566413L, 44367),
-                new Pair(1500406576513L, 84640),
-                new Pair(1500406586523L, 36174),
-                new Pair(1500406596553L, 40075),
-                new Pair(1500406606603L, 80886),
-                new Pair(1500406616623L, 43784),
-                new Pair(1500406626623L, 25077),
-                new Pair(1500406636723L, 18617),
-                new Pair(1500406646723L, 72681),
-                new Pair(1500406656723L, 84811),
-                new Pair(1500406666783L, 90053),
-                new Pair(1500406676685L, 25708),
-                new Pair(1500406686713L, 57134),
-                new Pair(1500406696673L, 87193),
-                new Pair(1500406706743L, 66057),
-                new Pair(1500406716724L, 51404),
-                new Pair(1500406726753L, 90141),
-                new Pair(1500406736813L, 10434),
-                new Pair(1500406746803L, 29056),
-                new Pair(1500406756833L, 48160),
-                new Pair(1500406766924L, 96652),
-                new Pair(1500406777113L, 64141),
-                new Pair(1500406787113L, 22143),
-                new Pair(1500406797093L, 20561),
-                new Pair(1500406807113L, 66401),
-                new Pair(1500406817283L, 76802),
-                new Pair(1500406827284L, 37555),
-                new Pair(1500406837323L, 63169),
-                new Pair(1500406847463L, 45712),
-                new Pair(1500406857513L, 44751),
-                new Pair(1500406867523L, 98891),
-                new Pair(1500406877523L, 38122),
-                new Pair(1500406887623L, 46202),
-                new Pair(1500406897703L, 5875),
-                new Pair(1500406907663L, 17397),
-                new Pair(1500406917603L, 39994),
-                new Pair(1500406927633L, 82385),
-                new Pair(1500406937623L, 15598),
-                new Pair(1500406947693L, 36235),
-                new Pair(1500406957703L, 97536),
-                new Pair(1500406967673L, 28557),
-                new Pair(1500406977723L, 13985),
-                new Pair(1500406987663L, 64304),
-                new Pair(1500406997573L, 83693),
-                new Pair(1500407007494L, 6574),
-                new Pair(1500407017493L, 25134),
-                new Pair(1500407027503L, 50383),
-                new Pair(1500407037523L, 55922),
-                new Pair(1500407047603L, 73436),
-                new Pair(1500407057473L, 68235),
-                new Pair(1500407067553L, 1469),
-                new Pair(1500407077463L, 44315),
-                new Pair(1500407087463L, 95064),
-                new Pair(1500407097443L, 1997),
-                new Pair(1500407107473L, 17247),
-                new Pair(1500407117453L, 42454),
-                new Pair(1500407127413L, 73631),
-                new Pair(1500407137363L, 96890),
-                new Pair(1500407147343L, 43450),
-                new Pair(1500407157363L, 42042),
-                new Pair(1500407167403L, 83014),
-                new Pair(1500407177473L, 32051),
-                new Pair(1500407187523L, 69280),
-                new Pair(1500407197495L, 21425),
-                new Pair(1500407207453L, 93748),
-                new Pair(1500407217413L, 64151),
-                new Pair(1500407227443L, 38791),
-                new Pair(1500407237463L, 5248),
-                new Pair(1500407247523L, 92935),
-                new Pair(1500407257513L, 18516),
-                new Pair(1500407267584L, 98870),
-                new Pair(1500407277573L, 82244),
-                new Pair(1500407287723L, 65464),
-                new Pair(1500407297723L, 33801),
-                new Pair(1500407307673L, 18331),
-                new Pair(1500407317613L, 89744),
-                new Pair(1500407327553L, 98460),
-                new Pair(1500407337503L, 24709),
-                new Pair(1500407347423L, 8407),
-                new Pair(1500407357383L, 69451),
-                new Pair(1500407367333L, 51100),
-                new Pair(1500407377373L, 25309),
-                new Pair(1500407387443L, 16148),
-                new Pair(1500407397453L, 98974),
-                new Pair(1500407407543L, 80284),
-                new Pair(1500407417583L, 170),
-                new Pair(1500407427453L, 34706),
-                new Pair(1500407437433L, 39681),
-                new Pair(1500407447603L, 6140),
-                new Pair(1500407457513L, 64595),
-                new Pair(1500407467564L, 59862),
-                new Pair(1500407477563L, 53795),
-                new Pair(1500407487593L, 83493),
-                new Pair(1500407497584L, 90639),
-                new Pair(1500407507623L, 16777),
-                new Pair(1500407517613L, 11096),
-                new Pair(1500407527673L, 38512),
-                new Pair(1500407537963L, 52759),
-                new Pair(1500407548023L, 79567),
-                new Pair(1500407558033L, 48664),
-                new Pair(1500407568113L, 10710),
-                new Pair(1500407578164L, 25635),
-                new Pair(1500407588213L, 40985),
-                new Pair(1500407598163L, 94089),
-                new Pair(1500407608163L, 50056),
-                new Pair(1500407618223L, 15550),
-                new Pair(1500407628143L, 78823),
-                new Pair(1500407638223L, 9044),
-                new Pair(1500407648173L, 20782),
-                new Pair(1500407658023L, 86390),
-                new Pair(1500407667903L, 79444),
-                new Pair(1500407677903L, 84051),
-                new Pair(1500407687923L, 91554),
-                new Pair(1500407697913L, 58777),
-                new Pair(1500407708003L, 89474),
-                new Pair(1500407718083L, 94026),
-                new Pair(1500407728034L, 41613),
-                new Pair(1500407738083L, 64667),
-                new Pair(1500407748034L, 5160),
-                new Pair(1500407758003L, 45140),
-                new Pair(1500407768033L, 53704),
-                new Pair(1500407778083L, 68097),
-                new Pair(1500407788043L, 81137),
-                new Pair(1500407798023L, 59657),
-                new Pair(1500407808033L, 56572),
-                new Pair(1500407817983L, 1993),
-                new Pair(1500407828063L, 62608),
-                new Pair(1500407838213L, 76489),
-                new Pair(1500407848203L, 22147),
-                new Pair(1500407858253L, 92829),
-                new Pair(1500407868073L, 48499),
-                new Pair(1500407878053L, 89152),
-                new Pair(1500407888073L, 9191),
-                new Pair(1500407898033L, 49881),
-                new Pair(1500407908113L, 96020),
-                new Pair(1500407918213L, 90203),
-                new Pair(1500407928234L, 32217),
-                new Pair(1500407938253L, 94302),
-                new Pair(1500407948293L, 83111),
-                new Pair(1500407958234L, 75576),
-                new Pair(1500407968073L, 5973),
-                new Pair(1500407978023L, 5175),
-                new Pair(1500407987923L, 63350),
-                new Pair(1500407997833L, 44081)
+        Value[] pairs = {
+                new Value(69087),
+                new Value(65640),
+                new Value(58155),
+                new Value(61025),
+                new Value(91156),
+                new Value(37516),
+                new Value(93515),
+                new Value(96226),
+                new Value(23833),
+                new Value(73186),
+                new Value(96947),
+                new Value(46927),
+                new Value(77954),
+                new Value(29302),
+                new Value(6700),
+                new Value(71971),
+                new Value(8528),
+                new Value(85321),
+                new Value(83229),
+                new Value(78298),
+                new Value(87122),
+                new Value(82055),
+                new Value(75067),
+                new Value(33680),
+                new Value(17576),
+                new Value(89701),
+                new Value(21427),
+                new Value(58255),
+                new Value(3768),
+                new Value(62086),
+                new Value(66965),
+                new Value(35801),
+                new Value(72169),
+                new Value(43089),
+                new Value(31418),
+                new Value(84781),
+                new Value(36103),
+                new Value(87431),
+                new Value(7379),
+                new Value(66919),
+                new Value(30906),
+                new Value(88630),
+                new Value(27546),
+                new Value(43813),
+                new Value(2124),
+                new Value(49399),
+                new Value(94577),
+                new Value(98459),
+                new Value(49457),
+                new Value(92838),
+                new Value(15628),
+                new Value(53916),
+                new Value(90387),
+                new Value(43176),
+                new Value(18838),
+                new Value(78847),
+                new Value(39591),
+                new Value(77070),
+                new Value(56788),
+                new Value(96706),
+                new Value(20756),
+                new Value(64433),
+                new Value(45791),
+                new Value(75028),
+                new Value(55403),
+                new Value(36991),
+                new Value(92929),
+                new Value(60416),
+                new Value(55485),
+                new Value(53525),
+                new Value(96021),
+                new Value(22705),
+                new Value(89801),
+                new Value(51975),
+                new Value(86741),
+                new Value(22440),
+                new Value(51818),
+                new Value(61965),
+                new Value(19074),
+                new Value(54521),
+                new Value(59315),
+                new Value(19171),
+                new Value(98800),
+                new Value(7086),
+                new Value(60578),
+                new Value(96828),
+                new Value(83746),
+                new Value(85481),
+                new Value(22346),
+                new Value(80976),
+                new Value(43586),
+                new Value(82500),
+                new Value(13576),
+                new Value(77871),
+                new Value(60978),
+                new Value(35264),
+                new Value(79733),
+                new Value(29140),
+                new Value(7237),
+                new Value(52866),
+                new Value(88456),
+                new Value(33533),
+                new Value(96961),
+                new Value(16389),
+                new Value(31181),
+                new Value(63282),
+                new Value(92857),
+                new Value(4582),
+                new Value(46832),
+                new Value(6335),
+                new Value(44367),
+                new Value(84640),
+                new Value(36174),
+                new Value(40075),
+                new Value(80886),
+                new Value(43784),
+                new Value(25077),
+                new Value(18617),
+                new Value(72681),
+                new Value(84811),
+                new Value(90053),
+                new Value(25708),
+                new Value(57134),
+                new Value(87193),
+                new Value(66057),
+                new Value(51404),
+                new Value(90141),
+                new Value(10434),
+                new Value(29056),
+                new Value(48160),
+                new Value(96652),
+                new Value(64141),
+                new Value(22143),
+                new Value(20561),
+                new Value(66401),
+                new Value(76802),
+                new Value(37555),
+                new Value(63169),
+                new Value(45712),
+                new Value(44751),
+                new Value(98891),
+                new Value(38122),
+                new Value(46202),
+                new Value(5875),
+                new Value(17397),
+                new Value(39994),
+                new Value(82385),
+                new Value(15598),
+                new Value(36235),
+                new Value(97536),
+                new Value(28557),
+                new Value(13985),
+                new Value(64304),
+                new Value(83693),
+                new Value(6574),
+                new Value(25134),
+                new Value(50383),
+                new Value(55922),
+                new Value(73436),
+                new Value(68235),
+                new Value(1469),
+                new Value(44315),
+                new Value(95064),
+                new Value(1997),
+                new Value(17247),
+                new Value(42454),
+                new Value(73631),
+                new Value(96890),
+                new Value(43450),
+                new Value(42042),
+                new Value(83014),
+                new Value(32051),
+                new Value(69280),
+                new Value(21425),
+                new Value(93748),
+                new Value(64151),
+                new Value(38791),
+                new Value(5248),
+                new Value(92935),
+                new Value(18516),
+                new Value(98870),
+                new Value(82244),
+                new Value(65464),
+                new Value(33801),
+                new Value(18331),
+                new Value(89744),
+                new Value(98460),
+                new Value(24709),
+                new Value(8407),
+                new Value(69451),
+                new Value(51100),
+                new Value(25309),
+                new Value(16148),
+                new Value(98974),
+                new Value(80284),
+                new Value(170),
+                new Value(34706),
+                new Value(39681),
+                new Value(6140),
+                new Value(64595),
+                new Value(59862),
+                new Value(53795),
+                new Value(83493),
+                new Value(90639),
+                new Value(16777),
+                new Value(11096),
+                new Value(38512),
+                new Value(52759),
+                new Value(79567),
+                new Value(48664),
+                new Value(10710),
+                new Value(25635),
+                new Value(40985),
+                new Value(94089),
+                new Value(50056),
+                new Value(15550),
+                new Value(78823),
+                new Value(9044),
+                new Value(20782),
+                new Value(86390),
+                new Value(79444),
+                new Value(84051),
+                new Value(91554),
+                new Value(58777),
+                new Value(89474),
+                new Value(94026),
+                new Value(41613),
+                new Value(64667),
+                new Value(5160),
+                new Value(45140),
+                new Value(53704),
+                new Value(68097),
+                new Value(81137),
+                new Value(59657),
+                new Value(56572),
+                new Value(1993),
+                new Value(62608),
+                new Value(76489),
+                new Value(22147),
+                new Value(92829),
+                new Value(48499),
+                new Value(89152),
+                new Value(9191),
+                new Value(49881),
+                new Value(96020),
+                new Value(90203),
+                new Value(32217),
+                new Value(94302),
+                new Value(83111),
+                new Value(75576),
+                new Value(5973),
+                new Value(5175),
+                new Value(63350),
+                new Value(44081)
         };
+
 
         comparePairsToCompression(blockTimestamp, pairs);
     }
@@ -335,25 +335,20 @@ public class EncodeTest {
         long now = LocalDateTime.of(2015, Month.MARCH, 02, 00, 00).toInstant(ZoneOffset.UTC).toEpochMilli();
 
         ByteBufferBitOutput output = new ByteBufferBitOutput();
-        Compressor c = new Compressor(now, output);
+        Compressor c = new Compressor(output);
 
         ByteBuffer bb = ByteBuffer.allocate(5 * 2*Long.BYTES);
 
-        bb.putLong(now + 1);
         bb.putDouble(6.00065e+06);
-        bb.putLong(now + 2);
         bb.putDouble(6.000656e+06);
-        bb.putLong(now + 3);
         bb.putDouble(6.000657e+06);
-        bb.putLong(now + 4);
         bb.putDouble(6.000659e+06);
-        bb.putLong(now + 5);
         bb.putDouble(6.000661e+06);
 
         bb.flip();
 
         for(int j = 0; j < 5; j++) {
-            c.addValue(bb.getLong(), bb.getDouble());
+            c.addValue(bb.getDouble());
         }
 
         c.close();
@@ -369,9 +364,8 @@ public class EncodeTest {
 
         // Replace with stream once decompressor supports it
         for(int i = 0; i < 5; i++) {
-            Pair pair = d.readPair();
+            Value pair = d.readPair();
 //            assertEquals(bb.getLong(), pair.getTimestamp(), "Timestamp did not match");
-            bb.getLong(); // read timestamp
             assertEquals(bb.getDouble(), pair.getDoubleValue(), "Value did not match");
         }
         assertNull(d.readPair());
@@ -393,16 +387,15 @@ public class EncodeTest {
         ByteBuffer bb = ByteBuffer.allocateDirect(amountOfPoints * 2*Long.BYTES);
 
         for(int i = 0; i < amountOfPoints; i++) {
-            bb.putLong(now + i*60);
             bb.putDouble(i * Math.random());
         }
 
-        Compressor c = new Compressor(blockStart, output);
+        Compressor c = new Compressor(output);
 
         bb.flip();
 
         for(int j = 0; j < amountOfPoints; j++) {
-            c.addValue(bb.getLong(), bb.getDouble());
+            c.addValue(bb.getDouble());
         }
 
         c.close();
@@ -417,9 +410,8 @@ public class EncodeTest {
         Decompressor d = new Decompressor(input);
 
         for(int i = 0; i < amountOfPoints; i++) {
-            bb.getLong();
             double val = bb.getDouble();
-            Pair pair = d.readPair();
+            Value pair = d.readPair();
             assertEquals(val, pair.getDoubleValue());
         }
         assertNull(d.readPair());
@@ -435,7 +427,7 @@ public class EncodeTest {
 
         ByteBufferBitOutput output = new ByteBufferBitOutput();
 
-        Compressor c = new Compressor(now, output);
+        Compressor c = new Compressor(output);
         c.close();
         System.out.println("Size: " + c.getSize());
 
@@ -460,16 +452,15 @@ public class EncodeTest {
         ByteBuffer bb = ByteBuffer.allocateDirect(amountOfPoints * 2*Long.BYTES);
 
         for(int i = 0; i < amountOfPoints; i++) {
-            bb.putLong(now + i*60);
             bb.putLong(ThreadLocalRandom.current().nextLong(Integer.MAX_VALUE));
         }
 
-        Compressor c = new Compressor(blockStart, output);
+        Compressor c = new Compressor(output);
 
         bb.flip();
 
         for(int j = 0; j < amountOfPoints; j++) {
-            c.addValue(bb.getLong(), bb.getLong());
+            c.addValue(bb.getLong());
         }
 
         c.close();
@@ -484,9 +475,8 @@ public class EncodeTest {
         Decompressor d = new Decompressor(input);
 
         for(int i = 0; i < amountOfPoints; i++) {
-            bb.getLong();
             long val = bb.getLong();
-            Pair pair = d.readPair();
+            Value pair = d.readPair();
             assertEquals(val, pair.getLongValue());
         }
         assertNull(d.readPair());

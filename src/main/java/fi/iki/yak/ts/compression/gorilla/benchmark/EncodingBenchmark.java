@@ -1,16 +1,36 @@
 package fi.iki.yak.ts.compression.gorilla.benchmark;
 
-import fi.iki.yak.ts.compression.gorilla.*;
-import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.infra.Blackhole;
-
 import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
+
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Level;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OperationsPerInvocation;
+import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.Blackhole;
+
+import fi.iki.yak.ts.compression.gorilla.ByteBufferBitInput;
+import fi.iki.yak.ts.compression.gorilla.ByteBufferBitOutput;
+import fi.iki.yak.ts.compression.gorilla.Compressor;
+import fi.iki.yak.ts.compression.gorilla.Decompressor;
+import fi.iki.yak.ts.compression.gorilla.GorillaCompressor;
+import fi.iki.yak.ts.compression.gorilla.GorillaDecompressor;
+import fi.iki.yak.ts.compression.gorilla.LongArrayInput;
+import fi.iki.yak.ts.compression.gorilla.LongArrayOutput;
+import fi.iki.yak.ts.compression.gorilla.Pair;
+import fi.iki.yak.ts.compression.gorilla.Value;
 
 /**
  * @author Michael Burman
@@ -75,14 +95,15 @@ public class EncodingBenchmark {
             ByteBufferBitOutput output = new ByteBufferBitOutput();
             LongArrayOutput arrayOutput = new LongArrayOutput(amountOfPoints);
 
-            Compressor c = new Compressor(blockStart, output);
+            Compressor c = new Compressor(output);
             GorillaCompressor gc = new GorillaCompressor(blockStart, arrayOutput);
 
             bb.flip();
 
             for(int j = 0; j < amountOfPoints; j++) {
 //                c.addValue(bb.getLong(), bb.getLong());
-                c.addValue(bb.getLong(), bb.getDouble());
+            	bb.getLong();
+                c.addValue(bb.getDouble());
                 gc.addValue(uncompressedTimestamps[j], uncompressedDoubles[j]);
             }
 
@@ -101,10 +122,11 @@ public class EncodingBenchmark {
     @OperationsPerInvocation(100000)
     public void encodingBenchmark(DataGenerator dg) {
         ByteBufferBitOutput output = new ByteBufferBitOutput();
-        Compressor c = new Compressor(dg.blockStart, output);
+        Compressor c = new Compressor(output);
 
         for(int j = 0; j < dg.amountOfPoints; j++) {
-            c.addValue(dg.uncompressedBuffer.getLong(), dg.uncompressedBuffer.getDouble());
+        	dg.uncompressedBuffer.getLong();
+            c.addValue(dg.uncompressedBuffer.getDouble());
         }
         c.close();
         dg.uncompressedBuffer.rewind();
@@ -116,7 +138,7 @@ public class EncodingBenchmark {
         ByteBuffer duplicate = dg.compressedBuffer.duplicate();
         ByteBufferBitInput input = new ByteBufferBitInput(duplicate);
         Decompressor d = new Decompressor(input);
-        Pair pair;
+        Value pair;
         while((pair = d.readPair()) != null) {
             bh.consume(pair);
         }

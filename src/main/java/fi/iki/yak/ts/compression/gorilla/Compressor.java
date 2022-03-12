@@ -19,7 +19,7 @@ public class Compressor {
     private BitOutput out;
 
     // We should have access to the series?
-    public Compressor(long timestamp, BitOutput output) {
+    public Compressor(BitOutput output) {
         out = output;
         size = 0;
     }
@@ -27,12 +27,11 @@ public class Compressor {
     /**
      * Adds a new long value to the series. Note, values must be inserted in order.
      *
-     * @param timestamp Timestamp which is inside the allowed time block (default 24 hours with millisecond precision)
      * @param value next floating point value in the series
      */
-    public void addValue(long timestamp, long value) {
+    public void addValue(long value) {
         if(first) {
-            writeFirst(timestamp, value);
+            writeFirst(value);
         } else {
             compressValue(value);
         }
@@ -41,18 +40,17 @@ public class Compressor {
     /**
      * Adds a new double value to the series. Note, values must be inserted in order.
      *
-     * @param timestamp Timestamp which is inside the allowed time block (default 24 hours with millisecond precision)
      * @param value next floating point value in the series
      */
-    public void addValue(long timestamp, double value) {
+    public void addValue(double value) {
         if(first) {
-            writeFirst(timestamp, Double.doubleToRawLongBits(value));
+            writeFirst(Double.doubleToRawLongBits(value));
         } else {
             compressValue(Double.doubleToRawLongBits(value));
         }
     }
 
-    private void writeFirst(long timestamp, long value) {
+    private void writeFirst(long value) {
     	first = false;
         storedVal = value;
         out.writeBits(storedVal, 64);
@@ -63,7 +61,7 @@ public class Compressor {
      * Closes the block and writes the remaining stuff to the BitOutput.
      */
     public void close() {
-    	addValue(0, Double.NaN);
+    	addValue(Double.NaN);
         out.skipBit();
         out.flush();
     }

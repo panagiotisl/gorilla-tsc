@@ -22,7 +22,7 @@ public class Compressor32 {
 
 
     // We should have access to the series?
-    public Compressor32(long timestamp, BitOutput output) {
+    public Compressor32(BitOutput output) {
         out = output;
         size = 0;
     }

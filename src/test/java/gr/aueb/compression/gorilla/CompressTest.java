@@ -71,8 +71,8 @@ public class CompressTest {
 		float totalBlocks = 0;
 		Collection<Double> values;
 		while ((values = timeseriesFileReader.nextBlock()) != null) {
-			Compressor compressor = new Compressor(0, new ByteBufferBitOutput());
-			values.forEach(value -> compressor.addValue(0, value));
+			Compressor compressor = new Compressor(new ByteBufferBitOutput());
+			values.forEach(value -> compressor.addValue(value));
 	        compressor.close();
 	        totalSize += compressor.getSize();
 	        totalBlocks += 1;
@@ -88,7 +88,7 @@ public class CompressTest {
 		float totalBlocks = 0;
 		Collection<Double> values;
 		while ((values = timeseriesFileReader.nextBlock()) != null) {
-			Compressor32 compressor = new Compressor32(0, new ByteBufferBitOutput());
+			Compressor32 compressor = new Compressor32(new ByteBufferBitOutput());
 			values.forEach(value -> compressor.addValue(value.floatValue()));
 	        compressor.close();
 	        totalSize += compressor.getSize();
@@ -104,7 +104,7 @@ public class CompressTest {
 		Collection<Double> values;
 		while ((values = timeseriesFileReader.nextBlock()) != null) {
 			ByteBufferBitOutput output = new ByteBufferBitOutput();
-			Compressor32 compressor = new Compressor32(0, output);
+			Compressor32 compressor = new Compressor32(output);
 			values.forEach(value -> compressor.addValue(value.floatValue()));
 	        compressor.close();
 
@@ -130,7 +130,7 @@ public class CompressTest {
 		double maxPrecisionError = 0;
 		while ((values = timeseriesFileReader.nextBlock()) != null) {
 			ByteBufferBitOutput output = new ByteBufferBitOutput();
-			Compressor32 compressor = new Compressor32(0, output);
+			Compressor32 compressor = new Compressor32(output);
 			values.forEach(value -> compressor.addValue(value.floatValue()));
 	        compressor.close();
 
@@ -159,8 +159,8 @@ public class CompressTest {
 		float totalBlocks = 0;
 		Collection<Double> values;
 		while ((values = timeseriesFileReader.nextBlock()) != null) {
-			Compressor compressor = new Compressor(0, new ByteBufferBitOutput());
-			values.forEach(value -> compressor.addValue(0, value));
+			Compressor compressor = new Compressor(new ByteBufferBitOutput());
+			values.forEach(value -> compressor.addValue(value));
 	        compressor.close();
 	        totalSize += compressor.getSize();
 	        totalBlocks += 1;
@@ -176,7 +176,7 @@ public class CompressTest {
 		float totalBlocks = 0;
 		Collection<Double> values;
 		while ((values = timeseriesFileReader.nextBlock()) != null) {
-			Compressor32 compressor = new Compressor32(0, new ByteBufferBitOutput());
+			Compressor32 compressor = new Compressor32(new ByteBufferBitOutput());
 			values.forEach(value -> compressor.addValue(value.floatValue()));
 	        compressor.close();
 	        totalSize += compressor.getSize();
@@ -192,7 +192,7 @@ public class CompressTest {
 		Collection<Double> values;
 		while ((values = timeseriesFileReader.nextBlock()) != null) {
 			ByteBufferBitOutput output = new ByteBufferBitOutput();
-			Compressor32 compressor = new Compressor32(0, output);
+			Compressor32 compressor = new Compressor32(output);
 			values.forEach(value -> compressor.addValue(value.floatValue()));
 	        compressor.close();
 
@@ -218,7 +218,7 @@ public class CompressTest {
 		double maxPrecisionError = 0;
 		while ((values = timeseriesFileReader.nextBlock()) != null) {
 			ByteBufferBitOutput output = new ByteBufferBitOutput();
-			Compressor32 compressor = new Compressor32(0, output);
+			Compressor32 compressor = new Compressor32(output);
 			values.forEach(value -> compressor.addValue(value.floatValue()));
 	        compressor.close();
 

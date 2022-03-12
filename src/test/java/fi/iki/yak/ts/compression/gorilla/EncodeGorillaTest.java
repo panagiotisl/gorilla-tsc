@@ -17,7 +17,7 @@ import fi.iki.yak.ts.compression.gorilla.predictors.DifferentialFCM;
 
 /**
  * These are generic tests to test that input matches the output after compression + decompression cycle, using
- * both the timestamp and value compression.
+ * both the timestamp and Pair compression.
  *
  * @author Michael Burman
  */
@@ -38,7 +38,7 @@ public class EncodeGorillaTest {
         for(int i = 0; i < pairs.length; i++) {
             Pair pair = d.readPair();
             assertEquals(pairs[i].getTimestamp(), pair.getTimestamp(), "Timestamp did not match");
-            assertEquals(pairs[i].getDoubleValue(), pair.getDoubleValue(), "Value did not match");
+            assertEquals(pairs[i].getDoubleValue(), pair.getDoubleValue(), "Pair did not match");
         }
 
         assertNull(d.readPair());
@@ -367,7 +367,7 @@ public class EncodeGorillaTest {
         for(int i = 0; i < 5; i++) {
             Pair pair = d.readPair();
             assertEquals(bb.getLong(), pair.getTimestamp(), "Timestamp did not match");
-            assertEquals(bb.getDouble(), pair.getDoubleValue(), "Value did not match");
+            assertEquals(bb.getDouble(), pair.getDoubleValue(), "Pair did not match");
         }
         assertNull(d.readPair());
     }
@@ -500,7 +500,7 @@ public class EncodeGorillaTest {
     }
 
     /**
-     * Long values should be compressable and decompressable in the stream
+     * Long Pairs should be compressable and decompressable in the stream
      */
     @Test
     void testLongEncoding() throws Exception {
