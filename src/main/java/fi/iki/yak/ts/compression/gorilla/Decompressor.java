@@ -16,10 +16,7 @@ public class Decompressor {
     private BitInput in;
 
     private final static long NAN_LONG = 0x7ff8000000000000L;
-    
-    private final static int NAN_INT = 0x7fc00000;
-    
-    
+
     public Decompressor(BitInput input) {
         in = input;
     }
@@ -45,7 +42,7 @@ public class Decompressor {
             	endOfStream = true;
             	return;
             }
-            
+
         } else {
         	nextValue();
         }
@@ -72,9 +69,9 @@ public class Decompressor {
             	endOfStream = true;
             	return;
             } else {
-            	storedVal = value;	
+            	storedVal = value;
             }
-            
+
         }
     }
 

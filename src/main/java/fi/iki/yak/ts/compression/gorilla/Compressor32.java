@@ -82,8 +82,8 @@ public class Compressor32 {
             int trailingZeros = Integer.numberOfTrailingZeros(xor);
 
             // Check overflow of leading? Can't be 32!
-            if(leadingZeros >= 32) {
-                leadingZeros = 31;
+            if(leadingZeros >= 16) {
+                leadingZeros = 15;
             }
 
             // Store bit '1'
@@ -125,7 +125,7 @@ public class Compressor32 {
      */
     private void writeNewLeading(int xor, int leadingZeros, int trailingZeros) {
         out.writeBit();
-        out.writeBits(leadingZeros, 5); // Number of leading zeros in the next 5 bits
+        out.writeBits(leadingZeros, 4); // Number of leading zeros in the next 5 bits
 
         int significantBits = 32 - leadingZeros - trailingZeros;
         out.writeBits(significantBits, 6); // Length of meaningful bits in the next 6 bits
@@ -134,7 +134,7 @@ public class Compressor32 {
         storedLeadingZeros = leadingZeros;
         storedTrailingZeros = trailingZeros;
 
-        size += 1 + 5 + 6 + significantBits;
+        size += 1 + 4 + 6 + significantBits;
     }
 
     public int getSize() {

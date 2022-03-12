@@ -417,10 +417,9 @@ public class Encode32Test {
         Decompressor32 d = new Decompressor32(input);
 
         for(int i = 0; i < amountOfPoints; i++) {
-            long tStamp = bb.getLong();
+            bb.getLong();
             double val = bb.getFloat();
             Pair32 pair = d.readPair();
-//            assertEquals(tStamp, pair.getTimestamp(), "Expected timestamp did not match at point " + i);
             assertEquals(val, pair.getFloatValue());
         }
         assertNull(d.readPair());
@@ -485,10 +484,9 @@ public class Encode32Test {
         Decompressor32 d = new Decompressor32(input);
 
         for(int i = 0; i < amountOfPoints; i++) {
-            long tStamp = bb.getLong();
+            bb.getLong();
             long val = bb.getInt();
             Pair32 pair = d.readPair();
-//            assertEquals(tStamp, pair.getTimestamp(), "Expected timestamp did not match at point " + i);
             assertEquals(val, pair.getIntValue());
         }
         assertNull(d.readPair());

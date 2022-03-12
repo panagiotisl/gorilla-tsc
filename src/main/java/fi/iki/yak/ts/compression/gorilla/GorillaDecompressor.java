@@ -1,7 +1,5 @@
 package fi.iki.yak.ts.compression.gorilla;
 
-import java.util.stream.Stream;
-
 import fi.iki.yak.ts.compression.gorilla.predictors.LastValuePredictor;
 
 /**

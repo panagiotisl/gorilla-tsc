@@ -417,10 +417,9 @@ public class EncodeTest {
         Decompressor d = new Decompressor(input);
 
         for(int i = 0; i < amountOfPoints; i++) {
-            long tStamp = bb.getLong();
+            bb.getLong();
             double val = bb.getDouble();
             Pair pair = d.readPair();
-//            assertEquals(tStamp, pair.getTimestamp(), "Expected timestamp did not match at point " + i);
             assertEquals(val, pair.getDoubleValue());
         }
         assertNull(d.readPair());
@@ -485,10 +484,9 @@ public class EncodeTest {
         Decompressor d = new Decompressor(input);
 
         for(int i = 0; i < amountOfPoints; i++) {
-            long tStamp = bb.getLong();
+            bb.getLong();
             long val = bb.getLong();
             Pair pair = d.readPair();
-//            assertEquals(tStamp, pair.getTimestamp(), "Expected timestamp did not match at point " + i);
             assertEquals(val, pair.getLongValue());
         }
         assertNull(d.readPair());
