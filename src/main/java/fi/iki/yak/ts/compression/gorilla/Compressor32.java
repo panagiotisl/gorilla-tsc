@@ -12,14 +12,17 @@ public class Compressor32 {
     private int storedTrailingZeros = 0;
     private int storedVal = 0;
     private boolean first = true;
+    private int size;
 
 //    public final static short FIRST_DELTA_BITS = 27;
 
     private BitOutput out;
 
+
     // We should have access to the series?
     public Compressor32(long timestamp, BitOutput output) {
         out = output;
+        size = 0;
     }
 
     /**
@@ -54,6 +57,7 @@ public class Compressor32 {
     	first = false;
         storedVal = value;
         out.writeBits(storedVal, 32);
+        size += 32;
     }
 
     /**
@@ -72,6 +76,7 @@ public class Compressor32 {
         if(xor == 0) {
             // Write 0
             out.skipBit();
+            size += 1;
         } else {
             int leadingZeros = Integer.numberOfLeadingZeros(xor);
             int trailingZeros = Integer.numberOfTrailingZeros(xor);
@@ -83,6 +88,7 @@ public class Compressor32 {
 
             // Store bit '1'
             out.writeBit();
+            size += 1;
 
             if(leadingZeros >= storedLeadingZeros && trailingZeros >= storedTrailingZeros) {
                 writeExistingLeading(xor);
@@ -104,6 +110,7 @@ public class Compressor32 {
         out.skipBit();
         int significantBits = 32 - storedLeadingZeros - storedTrailingZeros;
         out.writeBits(xor >>> storedTrailingZeros, significantBits);
+        size += 1 + significantBits;
     }
 
     /**
@@ -126,5 +133,11 @@ public class Compressor32 {
 
         storedLeadingZeros = leadingZeros;
         storedTrailingZeros = trailingZeros;
+
+        size += 1 + 5 + 6 + significantBits;
+    }
+
+    public int getSize() {
+    	return size;
     }
 }

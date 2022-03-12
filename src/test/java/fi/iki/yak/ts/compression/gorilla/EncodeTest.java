@@ -26,6 +26,7 @@ public class EncodeTest {
         Compressor c = new Compressor(blockTimestamp, output);
         Arrays.stream(pairs).forEach(p -> c.addValue(p.getTimestamp(), p.getDoubleValue()));
         c.close();
+        System.out.println("Size: " + c.getSize());
 
         ByteBuffer byteBuffer = output.getByteBuffer();
         byteBuffer.flip();
@@ -356,6 +357,7 @@ public class EncodeTest {
         }
 
         c.close();
+        System.out.println("Size: " + c.getSize());
 
         bb.flip();
 
@@ -404,6 +406,7 @@ public class EncodeTest {
         }
 
         c.close();
+        System.out.println("Size: " + c.getSize());
 
         bb.flip();
 
@@ -435,6 +438,7 @@ public class EncodeTest {
 
         Compressor c = new Compressor(now, output);
         c.close();
+        System.out.println("Size: " + c.getSize());
 
         ByteBuffer byteBuffer = output.getByteBuffer();
         byteBuffer.flip();
@@ -470,6 +474,7 @@ public class EncodeTest {
         }
 
         c.close();
+        System.out.println("Size: " + c.getSize());
 
         bb.flip();
 

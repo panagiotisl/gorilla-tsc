@@ -12,6 +12,7 @@ public class Compressor {
     private int storedTrailingZeros = 0;
     private long storedVal = 0;
     private boolean first = true;
+    private int size;
 
 //    public final static short FIRST_DELTA_BITS = 27;
 
@@ -20,6 +21,7 @@ public class Compressor {
     // We should have access to the series?
     public Compressor(long timestamp, BitOutput output) {
         out = output;
+        size = 0;
     }
 
     /**
@@ -54,6 +56,7 @@ public class Compressor {
     	first = false;
         storedVal = value;
         out.writeBits(storedVal, 64);
+        size += 64;
     }
 
     /**
@@ -72,6 +75,7 @@ public class Compressor {
         if(xor == 0) {
             // Write 0
             out.skipBit();
+            size += 1;
         } else {
             int leadingZeros = Long.numberOfLeadingZeros(xor);
             int trailingZeros = Long.numberOfTrailingZeros(xor);
@@ -83,6 +87,7 @@ public class Compressor {
 
             // Store bit '1'
             out.writeBit();
+            size += 1;
 
             if(leadingZeros >= storedLeadingZeros && trailingZeros >= storedTrailingZeros) {
                 writeExistingLeading(xor);
@@ -104,6 +109,7 @@ public class Compressor {
         out.skipBit();
         int significantBits = 64 - storedLeadingZeros - storedTrailingZeros;
         out.writeBits(xor >>> storedTrailingZeros, significantBits);
+        size += 1 + significantBits;
     }
 
     /**
@@ -126,5 +132,11 @@ public class Compressor {
 
         storedLeadingZeros = leadingZeros;
         storedTrailingZeros = trailingZeros;
+
+        size += 1 + 5 + 6 + significantBits;
+    }
+
+    public int getSize() {
+    	return size;
     }
 }

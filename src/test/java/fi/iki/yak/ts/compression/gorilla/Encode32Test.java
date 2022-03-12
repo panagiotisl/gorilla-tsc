@@ -26,6 +26,7 @@ public class Encode32Test {
         Compressor32 c = new Compressor32(blockTimestamp, output);
         Arrays.stream(pairs).forEach(p -> c.addValue(p.getTimestamp(), p.getFloatValue()));
         c.close();
+        System.out.println("Size: " + c.getSize());
 
         ByteBuffer byteBuffer = output.getByteBuffer();
         byteBuffer.flip();
@@ -52,9 +53,9 @@ public class Encode32Test {
                 new Pair32(now + 10, Float.floatToRawIntBits((float) 1.0)),
                 new Pair32(now + 20, Float.floatToRawIntBits((float) -2.0)),
                 new Pair32(now + 28, Float.floatToRawIntBits((float) -2.5)),
-                new Pair32(now + 84, Float.floatToRawIntBits((float) 65537)),
+                new Pair32(now + 84, Float.floatToRawIntBits(65537)),
                 new Pair32(now + 400, Float.floatToRawIntBits((float) 2147483650.0)),
-                new Pair32(now + 2300, Float.floatToRawIntBits((float) -16384)),
+                new Pair32(now + 2300, Float.floatToRawIntBits(-16384)),
                 new Pair32(now + 16384, Float.floatToRawIntBits((float) 2.8)),
                 new Pair32(now + 16500, Float.floatToRawIntBits((float) -38.0)),
         };
@@ -356,6 +357,7 @@ public class Encode32Test {
         }
 
         c.close();
+        System.out.println("Size: " + c.getSize());
 
         bb.flip();
 
@@ -404,6 +406,7 @@ public class Encode32Test {
         }
 
         c.close();
+        System.out.println("Size: " + c.getSize());
 
         bb.flip();
 
@@ -435,6 +438,7 @@ public class Encode32Test {
 
         Compressor32 c = new Compressor32(now, output);
         c.close();
+        System.out.println("Size: " + c.getSize());
 
         ByteBuffer byteBuffer = output.getByteBuffer();
         byteBuffer.flip();
@@ -470,6 +474,7 @@ public class Encode32Test {
         }
 
         c.close();
+        System.out.println("Size: " + c.getSize());
 
         bb.flip();
 

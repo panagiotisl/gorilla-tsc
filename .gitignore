@@ -14,3 +14,12 @@ hs_err_pid*
 .idea/
 *.iml
 target/
+
+# eclipse project file
+.settings/
+.classpath
+.project
+.metadata
+
+# Maven 
+target/
