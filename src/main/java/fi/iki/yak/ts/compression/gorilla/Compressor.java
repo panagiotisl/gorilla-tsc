@@ -30,7 +30,7 @@ public class Compressor {
     private void addHeader(long timestamp) {
         // One byte: length of the first delta
         // One byte: precision of timestamps
-        out.writeBits(timestamp, 64);
+//        out.writeBits(timestamp, 64);
     }
 
     /**
@@ -43,7 +43,7 @@ public class Compressor {
         if(storedTimestamp == 0) {
             writeFirst(timestamp, value);
         } else {
-            compressTimestamp(timestamp);
+//            compressTimestamp(timestamp);
             compressValue(value);
         }
     }
@@ -58,7 +58,7 @@ public class Compressor {
         if(storedTimestamp == 0) {
             writeFirst(timestamp, Double.doubleToRawLongBits(value));
         } else {
-            compressTimestamp(timestamp);
+//            compressTimestamp(timestamp);
             compressValue(Double.doubleToRawLongBits(value));
         }
     }
@@ -68,7 +68,7 @@ public class Compressor {
         storedTimestamp = timestamp;
         storedVal = value;
 
-        out.writeBits(storedDelta, FIRST_DELTA_BITS);
+//        out.writeBits(storedDelta, FIRST_DELTA_BITS);
         out.writeBits(storedVal, 64);
     }
 
@@ -77,8 +77,9 @@ public class Compressor {
      */
     public void close() {
         // These are selected to test interoperability and correctness of the solution, this can be read with go-tsz
-        out.writeBits(0x0F, 4);
-        out.writeBits(0xFFFFFFFF, 32);
+    	addValue(0, Double.NaN);
+//        out.writeBits(0x0F, 4);
+//        out.writeBits(0xFFFFFFFF, 32);
         out.skipBit();
         out.flush();
     }

@@ -19,9 +19,18 @@ public class Decompressor {
 
     private BitInput in;
 
+    private final static long NAN_LONG = 0x7ff8000000000000L;
+    
+    private final static int NAN_INT = 0x7fc00000;
+    
+    private final static double NAN_DOUBLE = Double.longBitsToDouble(0x7ff8000000000000L);
+
+    private final static float NAN_FLOAT = Float.intBitsToFloat(0x7fc00000);
+
+    
     public Decompressor(BitInput input) {
         in = input;
-        readHeader();
+//        readHeader();
     }
 
     private void readHeader() {
@@ -44,15 +53,20 @@ public class Decompressor {
     private void next() {
         if (storedTimestamp == 0) {
             // First item to read
-            storedDelta = in.getLong(Compressor.FIRST_DELTA_BITS);
-            if(storedDelta == (1<<27) - 1) {
-                endOfStream = true;
-                return;
-            }
+//            storedDelta = in.getLong(Compressor.FIRST_DELTA_BITS);
+//            if(storedDelta == (1<<27) - 1) {
+//                endOfStream = true;
+//                return;
+//            }
             storedVal = in.getLong(64);
-            storedTimestamp = blockTimestamp + storedDelta;
+            if (storedVal == NAN_LONG) {
+            	endOfStream =true;
+            }
+//            storedTimestamp = blockTimestamp + storedDelta;
+            storedTimestamp = 1;
         } else {
-            nextTimestamp();
+//            nextTimestamp();
+        	nextValue();
         }
     }
 
@@ -125,7 +139,13 @@ public class Decompressor {
             long value = in.getLong(64 - storedLeadingZeros - storedTrailingZeros);
             value <<= storedTrailingZeros;
             value = storedVal ^ value;
-            storedVal = value;
+            if (value == NAN_LONG) {
+            	endOfStream = true;
+            	return;
+            } else {
+            	storedVal = value;	
+            }
+            
         }
     }
 
