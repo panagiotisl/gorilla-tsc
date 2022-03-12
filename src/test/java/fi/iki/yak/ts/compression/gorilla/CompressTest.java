@@ -1,0 +1,237 @@
+package fi.iki.yak.ts.compression.gorilla;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.zip.GZIPInputStream;
+
+import org.junit.jupiter.api.Test;
+
+/**
+ * These are generic tests to test that input matches the output after compression + decompression cycle, using
+ * both the timestamp and value compression.
+ *
+ * @author Michael Burman
+ */
+public class CompressTest {
+
+	private class TimeseriesFileReader {
+		private static final int DEFAULT_BLOCK_SIZE = 1_000;
+		private static final String DELIMITER = ",";
+		private static final int VALUE_POSITION = 2;
+		BufferedReader bufferedReader;
+		private int blocksize;
+
+		public TimeseriesFileReader(InputStream inputStream) throws IOException {
+			this(inputStream, DEFAULT_BLOCK_SIZE);
+		}
+
+		public TimeseriesFileReader(InputStream inputStream, int blocksize) throws IOException {
+			InputStream gzipStream = new GZIPInputStream(inputStream);
+			Reader decoder = new InputStreamReader(gzipStream, "UTF-8");
+			this.bufferedReader = new BufferedReader(decoder);
+			this.blocksize = blocksize;
+		}
+
+		public Collection<Double> nextBlock() {
+			Collection<Double> list = new ArrayList<>();
+			String line;
+			try {
+				while ((line = bufferedReader.readLine()) != null) {
+					double value = Double.parseDouble(line.split(DELIMITER)[VALUE_POSITION]);
+					list.add(value);
+					if (list.size() == blocksize) {
+						return list;
+					}
+				}
+			} catch (NumberFormatException | IOException e) {
+				e.printStackTrace();
+			}
+			return null;
+		}
+	}
+
+	@Test
+	public void testSizeCompressor64ForBaselTemp() throws IOException {
+		String filename = "/basel-temp.csv.gz";
+		TimeseriesFileReader timeseriesFileReader = new TimeseriesFileReader(this.getClass().getResourceAsStream(filename));
+		int totalSize = 0;
+		float totalBlocks = 0;
+		Collection<Double> values;
+		while ((values = timeseriesFileReader.nextBlock()) != null) {
+			Compressor compressor = new Compressor(0, new ByteBufferBitOutput());
+			values.forEach(value -> compressor.addValue(0, value));
+	        compressor.close();
+	        totalSize += compressor.getSize();
+	        totalBlocks += 1;
+		}
+		System.out.println(String.format("%s - Size 64: %d, Bits/value: %.2f", filename, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE)));
+	}
+
+	@Test
+	public void testSizeCompressor32ForBaselTemp() throws IOException {
+		String filename = "/basel-temp.csv.gz";
+		TimeseriesFileReader timeseriesFileReader = new TimeseriesFileReader(this.getClass().getResourceAsStream(filename));
+		int totalSize = 0;
+		float totalBlocks = 0;
+		Collection<Double> values;
+		while ((values = timeseriesFileReader.nextBlock()) != null) {
+			Compressor32 compressor = new Compressor32(0, new ByteBufferBitOutput());
+			values.forEach(value -> compressor.addValue(0, value.floatValue()));
+	        compressor.close();
+	        totalSize += compressor.getSize();
+	        totalBlocks += 1;
+		}
+		System.out.println(String.format("%s - Size 32: %d, Bits/value: %.2f", filename, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE)));
+	}
+
+	@Test
+	public void shouldEncode32ForBaselTemp() throws IOException {
+		String filename = "/basel-temp.csv.gz";
+		TimeseriesFileReader timeseriesFileReader = new TimeseriesFileReader(this.getClass().getResourceAsStream(filename));
+		Collection<Double> values;
+		while ((values = timeseriesFileReader.nextBlock()) != null) {
+			ByteBufferBitOutput output = new ByteBufferBitOutput();
+			Compressor32 compressor = new Compressor32(0, output);
+			values.forEach(value -> compressor.addValue(0, value.floatValue()));
+	        compressor.close();
+
+	        ByteBuffer byteBuffer = output.getByteBuffer();
+	        byteBuffer.flip();
+	        ByteBufferBitInput input = new ByteBufferBitInput(byteBuffer);
+	        Decompressor32 d = new Decompressor32(input);
+	        for(Double value : values) {
+	            Pair32 pair = d.readPair();
+	            assertEquals(value.floatValue(), pair.getFloatValue(), "Value did not match");
+	        }
+	        assertNull(d.readPair());
+		}
+	}
+
+	@Test
+	public void testPrecision32ForBaselTemp() throws IOException {
+		String filename = "/basel-temp.csv.gz";
+		TimeseriesFileReader timeseriesFileReader = new TimeseriesFileReader(this.getClass().getResourceAsStream(filename));
+		Collection<Double> values;
+		double maxValue = Double.MIN_VALUE;
+		double minValue = Double.MAX_VALUE;
+		double maxPrecisionError = 0;
+		while ((values = timeseriesFileReader.nextBlock()) != null) {
+			ByteBufferBitOutput output = new ByteBufferBitOutput();
+			Compressor32 compressor = new Compressor32(0, output);
+			values.forEach(value -> compressor.addValue(0, value.floatValue()));
+	        compressor.close();
+
+	        ByteBuffer byteBuffer = output.getByteBuffer();
+	        byteBuffer.flip();
+	        ByteBufferBitInput input = new ByteBufferBitInput(byteBuffer);
+	        Decompressor32 d = new Decompressor32(input);
+	        for(Double value : values) {
+	        	maxValue = value > maxValue ? value : maxValue;
+	        	minValue = value < minValue ? value : minValue;
+	            Pair32 pair = d.readPair();
+	            double precisionError = Math.abs(value.doubleValue() - pair.getFloatValue());
+	            maxPrecisionError = (precisionError > maxPrecisionError) ? precisionError : maxPrecisionError;
+	            assertEquals(value.doubleValue(), pair.getFloatValue(), 0.00001, "Value did not match");
+	        }
+	        assertNull(d.readPair());
+		}
+		System.out.println(String.format("%s - Max precision error: %e, Range: %f, (error/range %%: %e)", filename, maxPrecisionError, (maxValue - minValue), maxPrecisionError / (maxValue - minValue)));
+	}
+
+	@Test
+	public void testSizeCompressor64ForBaselWindSpeed() throws IOException {
+		String filename = "/basel-wind-speed.csv.gz";
+		TimeseriesFileReader timeseriesFileReader = new TimeseriesFileReader(this.getClass().getResourceAsStream(filename));
+		int totalSize = 0;
+		float totalBlocks = 0;
+		Collection<Double> values;
+		while ((values = timeseriesFileReader.nextBlock()) != null) {
+			Compressor compressor = new Compressor(0, new ByteBufferBitOutput());
+			values.forEach(value -> compressor.addValue(0, value));
+	        compressor.close();
+	        totalSize += compressor.getSize();
+	        totalBlocks += 1;
+		}
+		System.out.println(String.format("%s - Size 64: %d, Bits/value: %.2f", filename, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE)));
+	}
+
+	@Test
+	public void testSizeCompressor32ForWindSpeed() throws IOException {
+		String filename = "/basel-wind-speed.csv.gz";
+		TimeseriesFileReader timeseriesFileReader = new TimeseriesFileReader(this.getClass().getResourceAsStream(filename));
+		int totalSize = 0;
+		float totalBlocks = 0;
+		Collection<Double> values;
+		while ((values = timeseriesFileReader.nextBlock()) != null) {
+			Compressor32 compressor = new Compressor32(0, new ByteBufferBitOutput());
+			values.forEach(value -> compressor.addValue(0, value.floatValue()));
+	        compressor.close();
+	        totalSize += compressor.getSize();
+	        totalBlocks += 1;
+		}
+		System.out.println(String.format("%s - Size 32: %d, Bits/value: %.2f", filename, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE)));
+	}
+
+	@Test
+	public void shouldEncode32ForBaselWindSpeed() throws IOException {
+		String filename = "/basel-wind-speed.csv.gz";
+		TimeseriesFileReader timeseriesFileReader = new TimeseriesFileReader(this.getClass().getResourceAsStream(filename));
+		Collection<Double> values;
+		while ((values = timeseriesFileReader.nextBlock()) != null) {
+			ByteBufferBitOutput output = new ByteBufferBitOutput();
+			Compressor32 compressor = new Compressor32(0, output);
+			values.forEach(value -> compressor.addValue(0, value.floatValue()));
+	        compressor.close();
+
+	        ByteBuffer byteBuffer = output.getByteBuffer();
+	        byteBuffer.flip();
+	        ByteBufferBitInput input = new ByteBufferBitInput(byteBuffer);
+	        Decompressor32 d = new Decompressor32(input);
+	        for(Double value : values) {
+	            Pair32 pair = d.readPair();
+	            assertEquals(value.floatValue(), pair.getFloatValue(), "Value did not match");
+	        }
+	        assertNull(d.readPair());
+		}
+	}
+
+	@Test
+	public void testPrecision32ForBaselWindSpeed() throws IOException {
+		String filename = "/basel-wind-speed.csv.gz";
+		TimeseriesFileReader timeseriesFileReader = new TimeseriesFileReader(this.getClass().getResourceAsStream(filename));
+		Collection<Double> values;
+		double maxValue = Double.MIN_VALUE;
+		double minValue = Double.MAX_VALUE;
+		double maxPrecisionError = 0;
+		while ((values = timeseriesFileReader.nextBlock()) != null) {
+			ByteBufferBitOutput output = new ByteBufferBitOutput();
+			Compressor32 compressor = new Compressor32(0, output);
+			values.forEach(value -> compressor.addValue(0, value.floatValue()));
+	        compressor.close();
+
+	        ByteBuffer byteBuffer = output.getByteBuffer();
+	        byteBuffer.flip();
+	        ByteBufferBitInput input = new ByteBufferBitInput(byteBuffer);
+	        Decompressor32 d = new Decompressor32(input);
+	        for(Double value : values) {
+	        	maxValue = value > maxValue ? value : maxValue;
+	        	minValue = value < minValue ? value : minValue;
+	            Pair32 pair = d.readPair();
+	            double precisionError = Math.abs(value.doubleValue() - pair.getFloatValue());
+	            maxPrecisionError = (precisionError > maxPrecisionError) ? precisionError : maxPrecisionError;
+	            assertEquals(value.doubleValue(), pair.getFloatValue(), 0.00001, "Value did not match");
+	        }
+	        assertNull(d.readPair());
+		}
+		System.out.println(String.format("%s - Max precision error: %e, Range: %f, (error/range %%: %e)", filename, maxPrecisionError, (maxValue - minValue), maxPrecisionError / (maxValue - minValue)));
+	}
+}
