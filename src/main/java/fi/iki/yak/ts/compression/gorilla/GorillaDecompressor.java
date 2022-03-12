@@ -17,6 +17,8 @@ public class GorillaDecompressor {
     private long storedVal = 0;
     private boolean endOfStream = false;
 
+    public final static short FIRST_DELTA_BITS = 27;
+
     private final BitInput in;
     private final ValueDecompressor decompressor;
 
@@ -61,7 +63,7 @@ public class GorillaDecompressor {
 
     private void first() {
         // First item to read
-        storedDelta = in.getLong(Compressor.FIRST_DELTA_BITS);
+        storedDelta = in.getLong(FIRST_DELTA_BITS);
         if(storedDelta == (1<<27) - 1) {
             endOfStream = true;
             return;

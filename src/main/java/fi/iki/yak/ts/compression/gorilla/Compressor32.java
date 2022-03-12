@@ -6,11 +6,11 @@ package fi.iki.yak.ts.compression.gorilla;
  *
  * @author Michael Burman
  */
-public class Compressor {
+public class Compressor32 {
 
     private int storedLeadingZeros = Integer.MAX_VALUE;
     private int storedTrailingZeros = 0;
-    private long storedVal = 0;
+    private int storedVal = 0;
     private boolean first = true;
 
 //    public final static short FIRST_DELTA_BITS = 27;
@@ -18,7 +18,7 @@ public class Compressor {
     private BitOutput out;
 
     // We should have access to the series?
-    public Compressor(long timestamp, BitOutput output) {
+    public Compressor32(long timestamp, BitOutput output) {
         out = output;
     }
 
@@ -28,7 +28,7 @@ public class Compressor {
      * @param timestamp Timestamp which is inside the allowed time block (default 24 hours with millisecond precision)
      * @param value next floating point value in the series
      */
-    public void addValue(long timestamp, long value) {
+    public void addValue(long timestamp, int value) {
         if(first) {
             writeFirst(timestamp, value);
         } else {
@@ -42,39 +42,39 @@ public class Compressor {
      * @param timestamp Timestamp which is inside the allowed time block (default 24 hours with millisecond precision)
      * @param value next floating point value in the series
      */
-    public void addValue(long timestamp, double value) {
+    public void addValue(long timestamp, float value) {
         if(first) {
-            writeFirst(timestamp, Double.doubleToRawLongBits(value));
+            writeFirst(timestamp, Float.floatToRawIntBits(value));
         } else {
-            compressValue(Double.doubleToRawLongBits(value));
+            compressValue(Float.floatToRawIntBits(value));
         }
     }
 
-    private void writeFirst(long timestamp, long value) {
+    private void writeFirst(long timestamp, int value) {
     	first = false;
         storedVal = value;
-        out.writeBits(storedVal, 64);
+        out.writeBits(storedVal, 32);
     }
 
     /**
      * Closes the block and writes the remaining stuff to the BitOutput.
      */
     public void close() {
-    	addValue(0, Double.NaN);
+    	addValue(0, Float.NaN);
         out.skipBit();
         out.flush();
     }
 
-    private void compressValue(long value) {
+    private void compressValue(int value) {
         // TODO Fix already compiled into a big method
-       long xor = storedVal ^ value;
+       int xor = storedVal ^ value;
 
         if(xor == 0) {
             // Write 0
             out.skipBit();
         } else {
-            int leadingZeros = Long.numberOfLeadingZeros(xor);
-            int trailingZeros = Long.numberOfTrailingZeros(xor);
+            int leadingZeros = Integer.numberOfLeadingZeros(xor);
+            int trailingZeros = Integer.numberOfTrailingZeros(xor);
 
             // Check overflow of leading? Can't be 32!
             if(leadingZeros >= 32) {
@@ -100,9 +100,9 @@ public class Compressor {
      *
      * @param xor XOR between previous value and current
      */
-    private void writeExistingLeading(long xor) {
+    private void writeExistingLeading(int xor) {
         out.skipBit();
-        int significantBits = 64 - storedLeadingZeros - storedTrailingZeros;
+        int significantBits = 32 - storedLeadingZeros - storedTrailingZeros;
         out.writeBits(xor >>> storedTrailingZeros, significantBits);
     }
 
@@ -116,11 +116,11 @@ public class Compressor {
      * @param leadingZeros New leading zeros
      * @param trailingZeros New trailing zeros
      */
-    private void writeNewLeading(long xor, int leadingZeros, int trailingZeros) {
+    private void writeNewLeading(int xor, int leadingZeros, int trailingZeros) {
         out.writeBit();
         out.writeBits(leadingZeros, 5); // Number of leading zeros in the next 5 bits
 
-        int significantBits = 64 - leadingZeros - trailingZeros;
+        int significantBits = 32 - leadingZeros - trailingZeros;
         out.writeBits(significantBits, 6); // Length of meaningful bits in the next 6 bits
         out.writeBits(xor >>> trailingZeros, significantBits); // Store the meaningful bits of XOR
 

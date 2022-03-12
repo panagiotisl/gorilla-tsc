@@ -5,22 +5,20 @@ package fi.iki.yak.ts.compression.gorilla;
  *
  * @author Michael Burman
  */
-public class Decompressor {
+public class Decompressor32 {
 
     private int storedLeadingZeros = Integer.MAX_VALUE;
     private int storedTrailingZeros = 0;
-    private long storedVal = 0;
+    private int storedVal = 0;
     private boolean first = true;
     private boolean endOfStream = false;
 
     private BitInput in;
 
-    private final static long NAN_LONG = 0x7ff8000000000000L;
-    
     private final static int NAN_INT = 0x7fc00000;
     
     
-    public Decompressor(BitInput input) {
+    public Decompressor32(BitInput input) {
         in = input;
     }
 
@@ -29,19 +27,19 @@ public class Decompressor {
      *
      * @return Pair if there's next value, null if series is done.
      */
-    public Pair readPair() {
+    public Pair32 readPair() {
         next();
         if(endOfStream) {
             return null;
         }
-        return new Pair(0, storedVal);
+        return new Pair32(0, storedVal);
     }
 
     private void next() {
         if (first) {
         	first = false;
-            storedVal = in.getLong(64);
-            if (storedVal == NAN_LONG) {
+            storedVal = (int) in.getLong(32);
+            if (storedVal == NAN_INT) {
             	endOfStream = true;
             	return;
             }
@@ -61,14 +59,14 @@ public class Decompressor {
 
                 byte significantBits = (byte) in.getLong(6);
                 if(significantBits == 0) {
-                    significantBits = 64;
+                    significantBits = 32;
                 }
-                storedTrailingZeros = 64 - significantBits - storedLeadingZeros;
+                storedTrailingZeros = 32 - significantBits - storedLeadingZeros;
             }
-            long value = in.getLong(64 - storedLeadingZeros - storedTrailingZeros);
+            int value = (int) in.getLong(32 - storedLeadingZeros - storedTrailingZeros);
             value <<= storedTrailingZeros;
             value = storedVal ^ value;
-            if (value == NAN_LONG) {
+            if (value == NAN_INT) {
             	endOfStream = true;
             	return;
             } else {
