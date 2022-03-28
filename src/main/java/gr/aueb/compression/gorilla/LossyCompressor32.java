@@ -8,23 +8,29 @@ import fi.iki.yak.ts.compression.gorilla.BitOutput;
  *
  * @author Michael Burman
  */
-public class Compressor32 {
+public class LossyCompressor32 {
 
     private int storedLeadingZeros = Integer.MAX_VALUE;
     private int storedTrailingZeros = 0;
     private int storedVal = 0;
     private boolean first = true;
     private int size;
+    private int cases[];
+    private float trailingDiff;
+    private float leadingDiff;
 
-//    public final static short FIRST_DELTA_BITS = 27;
 
     private BitOutput out;
+    private int logOfError;
 
-
-    // We should have access to the series?
-    public Compressor32(BitOutput output) {
-        out = output;
-        size = 0;
+    public LossyCompressor32(BitOutput output, int logOfError) {
+        this.out = output;
+        this.size = 0;
+        this.logOfError = logOfError;
+        int cases[] = {0, 0, 0};
+        this.cases = cases;
+        this.trailingDiff = 0;
+        this.leadingDiff = 0;
     }
 
     /**
@@ -73,10 +79,19 @@ public class Compressor32 {
 
     private void compressValue(int value) {
         // TODO Fix already compiled into a big method
-       int xor = storedVal ^ value;
+    	int integerDigits = (value << 1 >>> 24) - 127;
+    	int space = 23 + this.logOfError - integerDigits;
+
+    	if (space > 0) {
+    		value = value >> space << space;
+        	value = value | (storedVal & (2^space - 1));
+    	}
+
+    	int xor = storedVal ^ value;
 
         if(xor == 0) {
             // Write 0
+        	cases[0] += 1;
             out.skipBit();
             size += 1;
         } else {
@@ -93,8 +108,12 @@ public class Compressor32 {
             size += 1;
 
             if(leadingZeros >= storedLeadingZeros && trailingZeros >= storedTrailingZeros) {
+            	cases[1] += 1;
+            	this.trailingDiff += trailingZeros - storedTrailingZeros;
+            	this.leadingDiff += leadingZeros - storedLeadingZeros;
                 writeExistingLeading(xor);
             } else {
+            	cases[2] += 2;
                 writeNewLeading(xor, leadingZeros, trailingZeros);
             }
         }
@@ -142,4 +161,16 @@ public class Compressor32 {
     public int getSize() {
     	return size;
     }
+
+    public float getLeadingDiff() {
+		return leadingDiff;
+	}
+
+    public float getTrailingDiff() {
+		return trailingDiff;
+	}
+
+    public int[] getCases() {
+		return cases;
+	}
 }

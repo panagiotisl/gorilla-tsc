@@ -13,6 +13,9 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import org.junit.jupiter.api.Test;
 
+import gr.aueb.compression.gorilla.Decompressor32;
+import gr.aueb.compression.gorilla.LossyCompressor32;
+
 /**
  * These are generic tests to test that input matches the output after compression + decompression cycle, using
  * both the timestamp and value compression.
@@ -43,6 +46,28 @@ public class EncodeTest {
         assertNull(d.readPair());
     }
 
+    private void comparePairsToCompressionLossy(long blockTimestamp, gr.aueb.compression.gorilla.Value[] pairs) {
+        ByteBufferBitOutput output = new ByteBufferBitOutput();
+        LossyCompressor32 c = new LossyCompressor32(output, -1);
+        Arrays.stream(pairs).forEach(p -> c.addValue(p.getFloatValue()));
+        c.close();
+        System.out.println("Size: " + c.getSize());
+
+        ByteBuffer byteBuffer = output.getByteBuffer();
+        byteBuffer.flip();
+
+        ByteBufferBitInput input = new ByteBufferBitInput(byteBuffer);
+        Decompressor32 d = new Decompressor32(input);
+
+        // Replace with stream once decompressor supports it
+        for(int i = 0; i < pairs.length; i++) {
+        	gr.aueb.compression.gorilla.Value pair = d.readValue();
+            assertEquals(pairs[i].getFloatValue(), pair.getFloatValue(), 0.5, "Value did not match");
+        }
+
+        assertNull(d.readValue());
+    }
+
     @Test
     void simpleEncodeAndDecodeTest() throws Exception {
         long now = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
@@ -60,6 +85,36 @@ public class EncodeTest {
         };
 
         comparePairsToCompression(now, pairs);
+    }
+
+    @Test
+    void simpleLossyEncodeAndDecodeTest() throws Exception {
+        long now = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
+                .toInstant(ZoneOffset.UTC).toEpochMilli();
+
+        gr.aueb.compression.gorilla.Value[] pairs = {
+                new gr.aueb.compression.gorilla.Value(Float.floatToRawIntBits(1.0f)),
+                new gr.aueb.compression.gorilla.Value(Float.floatToRawIntBits(-2.0f)),
+                new gr.aueb.compression.gorilla.Value(Float.floatToRawIntBits(-2.5f)),
+                new gr.aueb.compression.gorilla.Value(Float.floatToRawIntBits(65537f)),
+                new gr.aueb.compression.gorilla.Value(Float.floatToRawIntBits(2147483650.0f)),
+                new gr.aueb.compression.gorilla.Value(Float.floatToRawIntBits(-16384f)),
+                new gr.aueb.compression.gorilla.Value(Float.floatToRawIntBits(2.8f)),
+                new gr.aueb.compression.gorilla.Value(Float.floatToRawIntBits(-38.0f)),
+
+                /*
+                Digits: 23 1
+                Digits: 21 1
+                Digits: 7 16
+                Digits: 7 31
+                Digits: 23 14
+                Digits: 0 1
+                Digits: 0 5
+                Digits: 19 128
+                */
+        };
+
+        comparePairsToCompressionLossy(now, pairs);
     }
 
     @Test
