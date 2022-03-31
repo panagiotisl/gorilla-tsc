@@ -11,6 +11,7 @@ import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,8 @@ import org.junit.jupiter.api.Test;
 import fi.iki.yak.ts.compression.gorilla.ByteBufferBitInput;
 import fi.iki.yak.ts.compression.gorilla.ByteBufferBitOutput;
 import fi.iki.yak.ts.compression.gorilla.Compressor;
+import gr.aueb.compression.gorilla.PmcMR.Constant;
+import gr.aueb.compression.gorilla.SwingFilter.SwingSegment;
 
 /**
  * These are generic tests to test that input matches the output after compression + decompression cycle, using
@@ -332,5 +335,172 @@ public class CompressTest {
 					filename, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE), maxPrecisionError, (maxValue - minValue), 100* maxPrecisionError / (maxValue - minValue), totalTrailingDiff / totalCases1, totalCases0 / total, totalCases1 / total, totalCases2 / total));
 		}
 	}
+	
+	@Test
+	public void testPmcMRFilterForBaselWindSpeed() throws IOException {
+		for (int logOfError = -10; logOfError < 10; logOfError++) {
+			String filename = "/basel-wind-speed.csv.gz";
+			TimeseriesFileReader timeseriesFileReader = new TimeseriesFileReader(this.getClass().getResourceAsStream(filename));
+			Collection<Double> values;
+			double maxValue = Double.MIN_VALUE;
+			double minValue = Double.MAX_VALUE;
+			int timestamp = 0;
+			double maxPrecisionError = 0;
+			int totalSize = 0;
+			float totalBlocks = 0;
+			while ((values = timeseriesFileReader.nextBlock()) != null) {
+				Collection<Point> points = new ArrayList<>();
+				for (Double value : values) {
+					points.add(new Point(timestamp++, value.floatValue()));
+				}
+				List<Constant> constants = new PmcMR().filter(points, ((float) Math.pow(2, logOfError)));
+				
+		        totalBlocks += 1;
+		        totalSize += constants.size() * 2 * 32;
+		        
+		        DecompressorPmcMr d = new DecompressorPmcMr(constants);
 
+		        for(Double value : values) {
+		        	maxValue = value > maxValue ? value : maxValue;
+		        	minValue = value < minValue ? value : minValue;
+		            Float decompressedValue = d.readValue();
+		            double precisionError = Math.abs(value.doubleValue() - decompressedValue);
+		            maxPrecisionError = (precisionError > maxPrecisionError) ? precisionError : maxPrecisionError;
+		            assertEquals(value.doubleValue(), decompressedValue, Math.pow(2, logOfError), "Value did not match");
+		        }
+
+			}
+			System.out.println(String.format("PMC-MR %s - Size : %d, Bits/value: %.2f, error: %f, Range: %.2f, (%.2f%%)",
+					filename, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE), maxPrecisionError, (maxValue - minValue), 100* maxPrecisionError / (maxValue - minValue)));
+		}
+		
+	}
+	
+	@Test
+	public void testPmcMRFilterForBaselTemp() throws IOException {
+		for (int logOfError = -10; logOfError < 10; logOfError++) {
+			String filename = "/basel-temp.csv.gz";
+			TimeseriesFileReader timeseriesFileReader = new TimeseriesFileReader(this.getClass().getResourceAsStream(filename));
+			Collection<Double> values;
+			double maxValue = Double.MIN_VALUE;
+			double minValue = Double.MAX_VALUE;
+			int timestamp = 0;
+			double maxPrecisionError = 0;
+			int totalSize = 0;
+			float totalBlocks = 0;
+			while ((values = timeseriesFileReader.nextBlock()) != null) {
+				Collection<Point> points = new ArrayList<>();
+				for (Double value : values) {
+					points.add(new Point(timestamp++, value.floatValue()));
+				}
+				List<Constant> constants = new PmcMR().filter(points, ((float) Math.pow(2, logOfError)));
+				
+		        totalBlocks += 1;
+		        totalSize += constants.size() * 2 * 32;
+		        
+		        DecompressorPmcMr d = new DecompressorPmcMr(constants);
+
+		        for(Double value : values) {
+		        	maxValue = value > maxValue ? value : maxValue;
+		        	minValue = value < minValue ? value : minValue;
+		            Float decompressedValue = d.readValue();
+		            double precisionError = Math.abs(value.doubleValue() - decompressedValue);
+		            maxPrecisionError = (precisionError > maxPrecisionError) ? precisionError : maxPrecisionError;
+		            assertEquals(value.doubleValue(), decompressedValue, Math.pow(2, logOfError), "Value did not match");
+		        }
+
+			}
+			System.out.println(String.format("PMC-MR %s - Size : %d, Bits/value: %.2f, error: %f, Range: %.2f, (%.2f%%)",
+					filename, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE), maxPrecisionError, (maxValue - minValue), 100* maxPrecisionError / (maxValue - minValue)));
+		}
+		
+	}
+
+	@Test
+	public void testSwingFilterSimple() throws IOException {
+		for (int logOfError = -1; logOfError < 0; logOfError++) {
+			Collection<Double> values = new ArrayList<>();
+			values.add(0.0);
+			values.add(3.2399998);
+			values.add(1.08);
+			values.add(1.1384199);
+			values.add(3.4152596);
+			values.add(4.3349743);
+			double maxValue = Double.MIN_VALUE;
+			double minValue = Double.MAX_VALUE;
+			int timestamp = 0;
+			double maxPrecisionError = 0;
+			int totalSize = 0;
+			float totalBlocks = 0;
+			Collection<Point> points = new ArrayList<>();
+			for (Double value : values) {
+				points.add(new Point(timestamp++, value.floatValue()));
+			}
+			List<SwingSegment> lines = new SwingFilter().filter(points, ((float) Math.pow(2, logOfError)));
+			
+	        totalBlocks += 1;
+	        totalSize += lines.size() * 3 * 32;
+	        
+	        DecompressorSwingFilter d = new DecompressorSwingFilter(lines);
+
+	        for(Double value : values) {
+	        	maxValue = value > maxValue ? value : maxValue;
+	        	minValue = value < minValue ? value : minValue;
+	            Float decompressedValue = d.readValue();
+	            double precisionError = Math.abs(value.doubleValue() - decompressedValue);
+	            maxPrecisionError = (precisionError > maxPrecisionError) ? precisionError : maxPrecisionError;
+	            System.out.println(value.doubleValue() + " " + decompressedValue);
+	            assertEquals(value.doubleValue(), decompressedValue, Math.pow(2, logOfError), "Value did not match");
+
+			System.out.println(String.format("Lossy32 %s - Size : %d, Bits/value: %.2f",
+					"simple", totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE)));
+	        }
+		}
+	}
+	
+	//@Test
+	public void testPmcMRfilterSimple() throws IOException {
+		for (int logOfError = -10; logOfError < 10; logOfError++) {
+			Collection<Double> values = new ArrayList<>();
+			values.add(0.0);
+			values.add(3.2399998);
+			values.add(1.08);
+			values.add(1.1384199);
+			values.add(3.4152596);
+			values.add(4.3349743);
+			double maxValue = Double.MIN_VALUE;
+			double minValue = Double.MAX_VALUE;
+			int timestamp = 0;
+			double maxPrecisionError = 0;
+			int totalSize = 0;
+			float totalBlocks = 0;
+			Collection<Point> points = new ArrayList<>();
+			for (Double value : values) {
+				points.add(new Point(timestamp++, value.floatValue()));
+			}
+			List<Constant> constants = new PmcMR().filter(points, ((float) Math.pow(2, logOfError)));
+			
+	        totalBlocks += 1;
+	        totalSize += constants.size() * 2 * 32;
+	        
+	        DecompressorPmcMr d = new DecompressorPmcMr(constants);
+
+	        for(Double value : values) {
+	        	maxValue = value > maxValue ? value : maxValue;
+	        	minValue = value < minValue ? value : minValue;
+	            Float decompressedValue = d.readValue();
+	            double precisionError = Math.abs(value.doubleValue() - decompressedValue);
+	            maxPrecisionError = (precisionError > maxPrecisionError) ? precisionError : maxPrecisionError;
+	            System.out.println(value.doubleValue() + " " + decompressedValue);
+	            assertEquals(value.doubleValue(), decompressedValue, Math.pow(2, logOfError), "Value did not match");
+	        }
+
+			System.out.println(String.format("Lossy32 %s - Size : %d, Bits/value: %.2f",
+					"simple", totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE)));
+		}
+		
+
+		
+	}
+	
 }

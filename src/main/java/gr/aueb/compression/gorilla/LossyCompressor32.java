@@ -78,6 +78,15 @@ public class LossyCompressor32 {
     }
 
     private void compressValue(int value) {
+    	// if values is within error wrt the previous value, use the previous value
+    	if (Math.abs(Float.intBitsToFloat(value) - Float.intBitsToFloat(storedVal)) < Math.pow(2, this.logOfError)) {
+    		// Write 0
+        	cases[0] += 1;
+            out.skipBit();
+            size += 1;
+            return;
+    	}
+    	
         // TODO Fix already compiled into a big method
     	int integerDigits = (value << 1 >>> 24) - 127;
     	int space = 23 + this.logOfError - integerDigits;
