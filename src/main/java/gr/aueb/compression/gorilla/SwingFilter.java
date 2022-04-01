@@ -24,33 +24,35 @@ public class SwingFilter {
 			}
 			else {
 				if (uiOld != null && liOld !=null && (uiOld.get(point.getTimestamp()) < point.getValue() || liOld.get(point.getTimestamp()) > point.getValue())) {
-					System.out.println("need to start new line");
-					LinearFunction line = new LinearFunction(first.getTimestamp(), first.getValue(), point.getTimestamp(), (uiOld.get(point.getTimestamp()) + liOld.get(point.getTimestamp()) / 2));
-					swingSegments.add(new SwingSegment(first.getTimestamp(), point.getTimestamp(), line));
+					LinearFunction line = new LinearFunction(first.getTimestamp(), first.getValue(), point.getTimestamp(), (uiOld.get(point.getTimestamp()) + liOld.get(point.getTimestamp())) / 2);
+//					System.out.println("need to start new line: " + line.toString());
+					swingSegments.add(new SwingSegment(first.getTimestamp(), point.getTimestamp() - 1, line));
 					uiOld = null;
 					liOld = null;
-				}
-				
-				LinearFunction uiNew = new LinearFunction(first.getTimestamp(), first.getValue(), point.getTimestamp(), point.getValue() + epsilon);
-				LinearFunction liNew = new LinearFunction(first.getTimestamp(), first.getValue(), point.getTimestamp(), point.getValue() - epsilon);
-				
-				if (uiOld == null || uiOld.get(point.getTimestamp()) > uiNew.get(point.getTimestamp())) {
-					uiOld = uiNew;
-					System.out.println("resetting upper");
-				}
-				if (liOld == null || liOld.get(point.getTimestamp()) < liNew.get(point.getTimestamp())) {
-					liOld = liNew;
-					System.out.println("resetting lower");
+					first = point;
+				} else {
+					LinearFunction uiNew = new LinearFunction(first.getTimestamp(), first.getValue(), point.getTimestamp(), point.getValue() + epsilon);
+					LinearFunction liNew = new LinearFunction(first.getTimestamp(), first.getValue(), point.getTimestamp(), point.getValue() - epsilon);
+					
+					if (uiOld == null || uiOld.get(point.getTimestamp()) > uiNew.get(point.getTimestamp())) {
+						uiOld = uiNew;
+//						System.out.println("resetting upper: " + uiOld);
+					}
+					if (liOld == null || liOld.get(point.getTimestamp()) < liNew.get(point.getTimestamp())) {
+						liOld = liNew;
+//						System.out.println("resetting lower: " + liOld);
+					}	
 				}
 			}
 		}
 		
-		if (uiOld != null && liOld !=null && (uiOld.get(last.getTimestamp()) < last.getValue() || liOld.get(last.getTimestamp()) > last.getValue())) {
-			System.out.println("need to start new line");
-			LinearFunction line = new LinearFunction(first.getTimestamp(), first.getValue(), last.getTimestamp(), (uiOld.get(last.getTimestamp()) + liOld.get(last.getTimestamp()) / 2));
+		if (uiOld != null && liOld !=null) {
+//			System.out.println("need to start new line");
+			LinearFunction line = new LinearFunction(first.getTimestamp(), first.getValue(), last.getTimestamp(), (uiOld.get(last.getTimestamp()) + liOld.get(last.getTimestamp())) / 2);
 			swingSegments.add(new SwingSegment(first.getTimestamp(), last.getTimestamp(), line));
-			uiOld = null;
-			liOld = null;
+		} else {
+			LinearFunction line = new LinearFunction(first.getTimestamp(), first.getValue(), first.getTimestamp() + 1, first.getValue());
+			swingSegments.add(new SwingSegment(first.getTimestamp(), first.getTimestamp(), line));
 		}
 		
 		return swingSegments;

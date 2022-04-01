@@ -29,4 +29,9 @@ public class LinearFunction {
 
     /** Instance Variables **/
     public final float a, b;
+    
+    @Override
+    public String toString() {
+    	return String.format("%fx+%f", a, b);
+    }
 }
