@@ -335,7 +335,7 @@ public class CompressTest {
 					filename, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE), maxPrecisionError, (maxValue - minValue), 100* maxPrecisionError / (maxValue - minValue), totalTrailingDiff / totalCases1, totalCases0 / total, totalCases1 / total, totalCases2 / total));
 		}
 	}
-	
+
 	@Test
 	public void testPmcMRFilterForBaselWindSpeed() throws IOException {
 		for (int logOfError = -10; logOfError < 10; logOfError++) {
@@ -354,10 +354,10 @@ public class CompressTest {
 					points.add(new Point(timestamp++, value.floatValue()));
 				}
 				List<Constant> constants = new PmcMR().filter(points, ((float) Math.pow(2, logOfError)));
-				
+
 		        totalBlocks += 1;
 		        totalSize += constants.size() * 2 * 32;
-		        
+
 		        DecompressorPmcMr d = new DecompressorPmcMr(constants);
 
 		        for(Double value : values) {
@@ -373,9 +373,9 @@ public class CompressTest {
 			System.out.println(String.format("PMC-MR %s - Size : %d, Bits/value: %.2f, error: %f, Range: %.2f, (%.2f%%)",
 					filename, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE), maxPrecisionError, (maxValue - minValue), 100* maxPrecisionError / (maxValue - minValue)));
 		}
-		
+
 	}
-	
+
 	@Test
 	public void testPmcMRFilterForBaselTemp() throws IOException {
 		for (int logOfError = -10; logOfError < 10; logOfError++) {
@@ -394,10 +394,10 @@ public class CompressTest {
 					points.add(new Point(timestamp++, value.floatValue()));
 				}
 				List<Constant> constants = new PmcMR().filter(points, ((float) Math.pow(2, logOfError)));
-				
+
 		        totalBlocks += 1;
 		        totalSize += constants.size() * 2 * 32;
-		        
+
 		        DecompressorPmcMr d = new DecompressorPmcMr(constants);
 
 		        for(Double value : values) {
@@ -413,7 +413,7 @@ public class CompressTest {
 			System.out.println(String.format("PMC-MR %s - Size : %d, Bits/value: %.2f, error: %f, Range: %.2f, (%.2f%%)",
 					filename, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE), maxPrecisionError, (maxValue - minValue), 100* maxPrecisionError / (maxValue - minValue)));
 		}
-		
+
 	}
 
 	@Test
@@ -434,10 +434,10 @@ public class CompressTest {
 					points.add(new Point(timestamp++, value.floatValue()));
 				}
 				List<SwingSegment> segments = new SwingFilter().filter(points, ((float) Math.pow(2, logOfError)));
-				
+
 		        totalBlocks += 1;
 		        totalSize += segments.size() * 3 * 32;
-		        
+
 		        DecompressorSwingFilter d = new DecompressorSwingFilter(segments);
 
 		        for(Double value : values) {
@@ -453,9 +453,9 @@ public class CompressTest {
 			System.out.println(String.format("SwingFilter %s - Size : %d, Bits/value: %.2f, error: %f, Range: %.2f, (%.2f%%)",
 					filename, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE), maxPrecisionError, (maxValue - minValue), 100* maxPrecisionError / (maxValue - minValue)));
 		}
-		
+
 	}
-	
+
 	@Test
 	public void testSwingFilterForBaselTemp() throws IOException {
 		for (int logOfError = -10; logOfError < 10; logOfError++) {
@@ -474,10 +474,10 @@ public class CompressTest {
 					points.add(new Point(timestamp++, value.floatValue()));
 				}
 				List<SwingSegment> segments = new SwingFilter().filter(points, ((float) Math.pow(2, logOfError)));
-				
+
 		        totalBlocks += 1;
 		        totalSize += segments.size() * 3 * 32;
-		        
+
 		        DecompressorSwingFilter d = new DecompressorSwingFilter(segments);
 
 		        for(Double value : values) {
@@ -486,19 +486,19 @@ public class CompressTest {
 		            Float decompressedValue = d.readValue();
 		            double precisionError = Math.abs(value.doubleValue() - decompressedValue);
 		            maxPrecisionError = (precisionError > maxPrecisionError) ? precisionError : maxPrecisionError;
-		            assertEquals(value.doubleValue(), decompressedValue, Math.pow(2, logOfError + 6), "Value did not match");
+		            assertEquals(value.doubleValue(), decompressedValue, Math.pow(2, logOfError), "Value did not match");
 		        }
 
 			}
 			System.out.println(String.format("SwingFilter %s - Size : %d, Bits/value: %.2f, error: %f, Range: %.2f, (%.2f%%)",
 					filename, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE), maxPrecisionError, (maxValue - minValue), 100* maxPrecisionError / (maxValue - minValue)));
 		}
-		
+
 	}
-	
+
 	@Test
 	public void testSwingFilterSimple() throws IOException {
-		for (int logOfError = -1; logOfError < 0; logOfError++) {
+		for (int logOfError = -10; logOfError < -9; logOfError++) {
 			Collection<Double> values = new ArrayList<>();
 			values.add(0.0);
 			values.add(3.2399998);
@@ -506,6 +506,51 @@ public class CompressTest {
 			values.add(1.1384199);
 			values.add(3.4152596);
 			values.add(4.3349743);
+			values.add(5.95906);
+			values.add(5.495161);
+			values.add(4.0249224);
+			values.add(2.0991426);
+			values.add(4.452954);
+			values.add(7.0911775);
+			values.add(6.9527545);
+			values.add(6.379216);
+			values.add(5.506941);
+			values.add(2.5959969);
+			values.add(2.8799999);
+			values.add(3.6179552);
+			values.add(4.1046314);
+			values.add(10.086427);
+			values.add(11.570515);
+			values.add(11.212135);
+			values.add(9.885262);
+			values.add(8.049845);
+			values.add(5.4477882);
+			values.add(2.2768397);
+			values.add(1.4399999);
+			values.add(2.16);
+			values.add(6.12);
+			values.add(9.826088);
+			values.add(15.778518);
+			values.add(15.807239);
+			values.add(16.75064);
+			values.add(19.66536);
+			values.add(19.930477);
+			values.add(19.586117);
+			values.add(18.448023);
+			values.add(16.946787);
+			values.add(16.09969);
+			values.add(14.408997);
+			values.add(12.074766);
+			values.add(13.207634);
+			values.add(11.966953);
+			values.add(12.55879);
+			values.add(11.435313);
+			values.add(16.179987);
+			values.add(19.826164);
+			values.add(22.065973);
+			values.add(20.929594);
+			values.add(19.652176);
+
 			double maxValue = Double.MIN_VALUE;
 			double minValue = Double.MAX_VALUE;
 			int timestamp = 0;
@@ -517,10 +562,10 @@ public class CompressTest {
 				points.add(new Point(timestamp++, value.floatValue()));
 			}
 			List<SwingSegment> lines = new SwingFilter().filter(points, ((float) Math.pow(2, logOfError)));
-			
+
 	        totalBlocks += 1;
 	        totalSize += lines.size() * 3 * 32;
-	        
+
 	        DecompressorSwingFilter d = new DecompressorSwingFilter(lines);
 
 	        for(Double value : values) {
@@ -536,7 +581,7 @@ public class CompressTest {
 	        }
 		}
 	}
-	
+
 	//@Test
 	public void testPmcMRfilterSimple() throws IOException {
 		for (int logOfError = -10; logOfError < 10; logOfError++) {
@@ -558,10 +603,10 @@ public class CompressTest {
 				points.add(new Point(timestamp++, value.floatValue()));
 			}
 			List<Constant> constants = new PmcMR().filter(points, ((float) Math.pow(2, logOfError)));
-			
+
 	        totalBlocks += 1;
 	        totalSize += constants.size() * 2 * 32;
-	        
+
 	        DecompressorPmcMr d = new DecompressorPmcMr(constants);
 
 	        for(Double value : values) {
@@ -577,9 +622,9 @@ public class CompressTest {
 			System.out.println(String.format("Lossy32 %s - Size : %d, Bits/value: %.2f",
 					"simple", totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE)));
 		}
-		
 
-		
+
+
 	}
-	
+
 }

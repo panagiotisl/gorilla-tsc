@@ -6,17 +6,17 @@ import java.util.List;
 
 public class SwingFilter {
 
-	
-	
+
+
 	public List<SwingSegment> filter(Collection<Point> points, float epsilon) {
-		
+
 		List<SwingSegment> swingSegments = new ArrayList<>();
-		
+
 		Point first = null;
 		LinearFunction uiOld = null;
 		LinearFunction liOld = null;
 		Point last = null;
-		
+
 		for (Point point : points) {
 			last = point;
 			if (first == null) {
@@ -25,7 +25,7 @@ public class SwingFilter {
 			else {
 				if (uiOld != null && liOld !=null && (uiOld.get(point.getTimestamp()) < point.getValue() || liOld.get(point.getTimestamp()) > point.getValue())) {
 					LinearFunction line = new LinearFunction(first.getTimestamp(), first.getValue(), point.getTimestamp(), (uiOld.get(point.getTimestamp()) + liOld.get(point.getTimestamp())) / 2);
-//					System.out.println("need to start new line: " + line.toString());
+//					System.out.println("need to start new line: " + line.toString() + " : " + first.getTimestamp() + " " + (point.getTimestamp() - 1));
 					swingSegments.add(new SwingSegment(first.getTimestamp(), point.getTimestamp() - 1, line));
 					uiOld = null;
 					liOld = null;
@@ -33,7 +33,7 @@ public class SwingFilter {
 				} else {
 					LinearFunction uiNew = new LinearFunction(first.getTimestamp(), first.getValue(), point.getTimestamp(), point.getValue() + epsilon);
 					LinearFunction liNew = new LinearFunction(first.getTimestamp(), first.getValue(), point.getTimestamp(), point.getValue() - epsilon);
-					
+
 					if (uiOld == null || uiOld.get(point.getTimestamp()) > uiNew.get(point.getTimestamp())) {
 						uiOld = uiNew;
 //						System.out.println("resetting upper: " + uiOld);
@@ -41,11 +41,11 @@ public class SwingFilter {
 					if (liOld == null || liOld.get(point.getTimestamp()) < liNew.get(point.getTimestamp())) {
 						liOld = liNew;
 //						System.out.println("resetting lower: " + liOld);
-					}	
+					}
 				}
 			}
 		}
-		
+
 		if (uiOld != null && liOld !=null) {
 //			System.out.println("need to start new line");
 			LinearFunction line = new LinearFunction(first.getTimestamp(), first.getValue(), last.getTimestamp(), (uiOld.get(last.getTimestamp()) + liOld.get(last.getTimestamp())) / 2);
@@ -54,45 +54,45 @@ public class SwingFilter {
 			LinearFunction line = new LinearFunction(first.getTimestamp(), first.getValue(), first.getTimestamp() + 1, first.getValue());
 			swingSegments.add(new SwingSegment(first.getTimestamp(), first.getTimestamp(), line));
 		}
-		
+
 		return swingSegments;
 	}
-	
-	
+
+
 	public class SwingSegment {
-		
+
 		private long initialTimestamp;
 		private long finalTimestamp;
 		private LinearFunction line;
-		
+
 		public SwingSegment(long initialTimestamp, long finalTimestamp, LinearFunction line) {
 			this.initialTimestamp = initialTimestamp;
 			this.finalTimestamp = finalTimestamp;
 			this.line = line;
 		}
-		
+
 		public long getFinalTimestamp() {
 			return finalTimestamp;
 		}
-		
+
 		public long getInitialTimestamp() {
 			return initialTimestamp;
 		}
-		
+
 		public LinearFunction getLine() {
 			return line;
 		}
-		
+
 		@Override
 		public String toString() {
 			return String.format("%d-%d: %f", getInitialTimestamp(), getFinalTimestamp(), getLine());
 		}
-		
+
 	}
-	
+
 	/**
 	 *
-	 * 
+	 *
 	 * // initialization
 1. (t1,X1) = getNext();(t2,X2) = getNext();
 2. Make a recording: (t0’,X0’) = (t1,X1);
@@ -122,22 +122,22 @@ and (tj,Xj-Vd(i,εi));
 17. if (tj,Xj) falls more than εi below uik in the xi dimension
 18. “Swing down” uik such that it passes through (tk,xk)
 and (tj,Xj+Vd(i,εi));
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
     lines = []
     line_first_timestamp, line_first_value = None, None
     coefficients_up, coefficients_down = None, None
@@ -182,7 +182,7 @@ and (tj,Xj+Vd(i,εi));
     # Raises a warning if there is one point only, line_first_timestamp == timestamp
     lines.append([line_first_timestamp, np.polyfit(x=[line_first_timestamp, timestamp], y=[line_first_value, value], deg=1)])
 
-	 * 
+	 *
 	 * */
-	
+
 }

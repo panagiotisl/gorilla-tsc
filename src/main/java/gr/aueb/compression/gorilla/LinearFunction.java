@@ -24,12 +24,12 @@ public class LinearFunction {
 
     /** Public Methods **/
     public float get(long ts) {
-        return this.a * ts + this.b;
+        return (float) (this.a * ts + this.b);
     }
 
     /** Instance Variables **/
-    public final float a, b;
-    
+    public final double a, b;
+
     @Override
     public String toString() {
     	return String.format("%fx+%f", a, b);

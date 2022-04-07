@@ -2,7 +2,6 @@ package gr.aueb.compression.gorilla;
 
 import java.util.List;
 
-import gr.aueb.compression.gorilla.PmcMR.Constant;
 import gr.aueb.compression.gorilla.SwingFilter.SwingSegment;
 
 public class DecompressorSwingFilter {
@@ -12,7 +11,7 @@ public class DecompressorSwingFilter {
     private boolean endOfStream = false;
     private int currentElement = 0;
     private int currentTimestampOffset = 0;
-    
+
     public DecompressorSwingFilter(List<SwingSegment> swingSegments) {
     	this.swingSegments = swingSegments;
     }
@@ -40,6 +39,7 @@ public class DecompressorSwingFilter {
     		if (currentElement < swingSegments.size()) {
     			swingSegment = swingSegments.get(currentElement);
     			storedVal = swingSegment.getLine().get(swingSegment.getInitialTimestamp());
+
     			currentTimestampOffset = 1;
     		} else {
     			endOfStream = true;
