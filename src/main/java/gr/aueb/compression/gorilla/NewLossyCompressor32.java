@@ -85,7 +85,7 @@ public class NewLossyCompressor32 {
             size += 1;
             return;
     	}
-    	
+
         // TODO Fix already compiled into a big method
     	int integerDigits = (value << 1 >>> 24) - 127;
     	int space = 23 + this.logOfError - integerDigits;
@@ -117,7 +117,7 @@ public class NewLossyCompressor32 {
             size += 1;
 
             if((leadingZeros >= storedLeadingZeros && trailingZeros >= storedTrailingZeros)
-            		&& leadingZeros + trailingZeros < storedLeadingZeros + storedTrailingZeros + 8) {
+            		&& leadingZeros + trailingZeros < storedLeadingZeros + storedTrailingZeros + 10) {
             	cases[1] += 1;
             	this.trailingDiff += trailingZeros - storedTrailingZeros;
             	this.leadingDiff += leadingZeros - storedLeadingZeros;
@@ -161,7 +161,7 @@ public class NewLossyCompressor32 {
 
         int significantBits = 32 - leadingZeros - trailingZeros;
         if (significantBits == 32) {
-        	out.writeBits(0, 5); // Length of meaningful bits in the next 5 bits	
+        	out.writeBits(0, 5); // Length of meaningful bits in the next 5 bits
         } else {
         	out.writeBits(significantBits, 5); // Length of meaningful bits in the next 5 bits
         }
@@ -169,7 +169,7 @@ public class NewLossyCompressor32 {
 
         storedLeadingZeros = leadingZeros;
         storedTrailingZeros = trailingZeros;
-        size += 1 + 3 + 5 + significantBits;
+        size += 1 + 4 + 5 + significantBits;
     }
 
     public int getSize() {
