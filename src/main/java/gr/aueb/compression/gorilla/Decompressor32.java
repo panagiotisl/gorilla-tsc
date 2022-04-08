@@ -59,7 +59,7 @@ public class Decompressor32 {
                 // New leading and trailing zeros
                 storedLeadingZeros = (int) in.getLong(4);
 
-                byte significantBits = (byte) in.getLong(6);
+                byte significantBits = (byte) in.getLong(5);
                 if(significantBits == 0) {
                     significantBits = 32;
                 }
