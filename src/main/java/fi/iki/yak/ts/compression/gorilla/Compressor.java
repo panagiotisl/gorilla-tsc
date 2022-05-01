@@ -125,7 +125,12 @@ public class Compressor {
         out.writeBits(leadingZeros, 5); // Number of leading zeros in the next 5 bits
 
         int significantBits = 64 - leadingZeros - trailingZeros;
-        out.writeBits(significantBits, 6); // Length of meaningful bits in the next 6 bits
+        if (significantBits == 64) {
+        	out.writeBits(0, 6); // Length of meaningful bits in the next 6 bits	
+        } else {
+        	out.writeBits(significantBits, 6); // Length of meaningful bits in the next 6 bits
+        }
+
         out.writeBits(xor >>> trailingZeros, significantBits); // Store the meaningful bits of XOR
 
         storedLeadingZeros = leadingZeros;

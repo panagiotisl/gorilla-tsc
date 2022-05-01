@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -64,23 +66,158 @@ public class CompressTest {
 			}
 			return null;
 		}
+
+
+		public double[] nextBlockArray() {
+			double[] values = new double[DEFAULT_BLOCK_SIZE];
+			String line;
+			int counter = 0;
+			try {
+				while ((line = bufferedReader.readLine()) != null) {
+					double value = Double.parseDouble(line.split(DELIMITER)[VALUE_POSITION]);
+					values[counter++] = value;
+					if (counter == blocksize) {
+						return values;
+					}
+				}
+			} catch (NumberFormatException | IOException e) {
+				e.printStackTrace();
+			}
+			return null;
+		}
 	}
 
 	@Test
-	public void testSizeCompressor64ForBaselTemp() throws IOException {
+	public void testSizeChimpForBaselTemp() throws IOException {
+		System.out.println("CHIMP");
+		for (int i=0; i<30; i++) {
+			String filename = "/basel-temp.csv.gz";
+			TimeseriesFileReader timeseriesFileReader = new TimeseriesFileReader(this.getClass().getResourceAsStream(filename));
+			long totalSize = 0;
+			float totalBlocks = 0;
+			double[] values;
+			long duration = 0;
+			while ((values = timeseriesFileReader.nextBlockArray()) != null) {
+				ByteBufferBitOutput output = new ByteBufferBitOutput();
+				Chimp compressor = new Chimp(output);
+				long start = System.nanoTime();
+				for (double value : values) {
+					compressor.addValue(value);
+				}
+		        compressor.close();
+		        duration += System.nanoTime() - start;
+		        totalSize += compressor.getSize();
+		        totalBlocks += 1;
+
+		        ByteBuffer byteBuffer = output.getByteBuffer();
+		        byteBuffer.flip();
+		        ByteBufferBitInput input = new ByteBufferBitInput(byteBuffer);
+		        ChimpDecompressor d = new ChimpDecompressor(input);
+		        for(Double value : values) {
+		            fi.iki.yak.ts.compression.gorilla.Value pair = d.readPair();
+		            assertEquals(value.doubleValue(), pair.getDoubleValue(), "Value did not match");
+		        }
+		        assertNull(d.readPair());
+
+			}
+			System.out.println(duration);
+			System.out.println(String.format("%s - Size 64: %d, Bits/value: %.2f, Compression time per block: %.2f", filename, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE), duration / totalBlocks));
+		}
+		System.out.println("CHIMP");
+	}
+
+	@Test
+	public void testSizeChimp128ForBaselTemp() throws IOException {
+		System.out.println("CHIMP128");
 		String filename = "/basel-temp.csv.gz";
 		TimeseriesFileReader timeseriesFileReader = new TimeseriesFileReader(this.getClass().getResourceAsStream(filename));
-		int totalSize = 0;
+		long totalSize = 0;
 		float totalBlocks = 0;
-		Collection<Double> values;
-		while ((values = timeseriesFileReader.nextBlock()) != null) {
-			Compressor compressor = new Compressor(new ByteBufferBitOutput());
-			values.forEach(value -> compressor.addValue(value));
+		double[] values;
+		long duration = 0;
+		while ((values = timeseriesFileReader.nextBlockArray()) != null || totalBlocks < 50000) {
+			if (values == null) {
+				timeseriesFileReader = new TimeseriesFileReader(this.getClass().getResourceAsStream(filename));
+				values = timeseriesFileReader.nextBlockArray();
+			}
+			ByteBufferBitOutput output = new ByteBufferBitOutput();
+			ChimpN compressor = new ChimpN(output, 128);
+			long start = System.nanoTime();
+			for (double value : values) {
+				compressor.addValue(value);
+			}
 	        compressor.close();
+	        duration += System.nanoTime() - start;
+	        totalSize += compressor.getSize();
+	        totalBlocks += 1;
+
+	        ByteBuffer byteBuffer = output.getByteBuffer();
+	        byteBuffer.flip();
+	        ByteBufferBitInput input = new ByteBufferBitInput(byteBuffer);
+	        ChimpNDecompressor d = new ChimpNDecompressor(input, 128);
+	        for(Double value : values) {
+	            fi.iki.yak.ts.compression.gorilla.Value pair = d.readPair();
+	            assertEquals(value.doubleValue(), pair.getDoubleValue(), "Value did not match");
+	        }
+	        assertNull(d.readPair());
+
+		}
+		System.out.println(duration);
+		System.out.println(String.format("%s - Size 64: %d, Bits/value: %.2f, Compression time per block: %.2f", filename, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE), duration / totalBlocks));
+		System.out.println("CHIMP128");
+	}
+
+
+	@Test
+	public void testSizeCompressor64ForBaselTemp() throws IOException {
+		System.out.println("GORILLA");
+		String filename = "/basel-temp.csv.gz";
+		TimeseriesFileReader timeseriesFileReader = new TimeseriesFileReader(this.getClass().getResourceAsStream(filename));
+		long totalSize = 0;
+		float totalBlocks = 0;
+		double[] values;
+		long duration = 0;
+		while ((values = timeseriesFileReader.nextBlockArray()) != null || totalBlocks < 50000) {
+			if (values == null) {
+				timeseriesFileReader = new TimeseriesFileReader(this.getClass().getResourceAsStream(filename));
+				values = timeseriesFileReader.nextBlockArray();
+			}
+			Compressor compressor = new Compressor(new ByteBufferBitOutput());
+			long start = System.nanoTime();
+			for (double value : values) {
+				compressor.addValue(value);
+			}
+	        compressor.close();
+	        duration += System.nanoTime() - start;
 	        totalSize += compressor.getSize();
 	        totalBlocks += 1;
 		}
-		System.out.println(String.format("%s - Size 64: %d, Bits/value: %.2f", filename, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE)));
+		System.out.println(duration);
+		System.out.println(String.format("%s - Size 64: %d, Bits/value: %.2f, Compression time per block: %.2f", filename, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE), duration / totalBlocks));
+		System.out.println("GORILLA");
+	}
+
+	@Test
+	public void testSizeCompressor64ForStocksDE() throws IOException {
+		String filename = "/home/panagiotis/Stocks-Germany.txt.gz";
+		TimeseriesFileReader timeseriesFileReader = new TimeseriesFileReader(new FileInputStream(new File(filename)));
+		int totalSize = 0;
+		float totalBlocks = 0;
+		Collection<Double> values;
+		long duration = 0;
+		while ((values = timeseriesFileReader.nextBlock()) != null) {
+			Compressor compressor = new Compressor(new ByteBufferBitOutput());
+			long start = System.nanoTime();
+			values.forEach(value -> compressor.addValue(value));
+	        compressor.close();
+	        duration += System.nanoTime() - start;
+	        totalSize += compressor.getSize();
+	        totalBlocks += 1;
+		}
+
+		System.out.println(duration);
+		System.out.println(totalBlocks);
+		System.out.println(String.format("%s - Size 64: %d, Bits/value: %.2f, Compression time per block: %.2f", filename, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE), duration / totalBlocks));
 	}
 
 	@Test

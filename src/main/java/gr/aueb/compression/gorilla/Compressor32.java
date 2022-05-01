@@ -20,7 +20,6 @@ public class Compressor32 {
 
     private BitOutput out;
 
-
     // We should have access to the series?
     public Compressor32(BitOutput output) {
         out = output;
@@ -30,7 +29,6 @@ public class Compressor32 {
     /**
      * Adds a new long value to the series. Note, values must be inserted in order.
      *
-     * @param timestamp Timestamp which is inside the allowed time block (default 24 hours with millisecond precision)
      * @param value next floating point value in the series
      */
     public void addValue(int value) {
@@ -44,7 +42,6 @@ public class Compressor32 {
     /**
      * Adds a new double value to the series. Note, values must be inserted in order.
      *
-     * @param timestamp Timestamp which is inside the allowed time block (default 24 hours with millisecond precision)
      * @param value next floating point value in the series
      */
     public void addValue(float value) {
