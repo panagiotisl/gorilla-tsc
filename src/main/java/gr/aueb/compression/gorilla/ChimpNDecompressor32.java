@@ -7,12 +7,12 @@ import fi.iki.yak.ts.compression.gorilla.ByteBufferBitInput2;
  *
  * @author Michael Burman
  */
-public class ChimpNDecompressor {
+public class ChimpNDecompressor32 {
 
     private int storedLeadingZeros = Integer.MAX_VALUE;
     private int storedTrailingZeros = 0;
-    private long storedVal = 0;
-    private long storedValues[];
+    private int storedVal = 0;
+    private int storedValues[];
     private int current = 0;
     private boolean first = true;
     private boolean endOfStream = false;
@@ -23,13 +23,13 @@ public class ChimpNDecompressor {
 
 	public final static short[] leadingRepresentation = {0, 8, 12, 16, 18, 20, 22, 24};
 
-    private final static long NAN_LONG = 0x7ff8000000000000L;
+	private final static int NAN_INT = 0x7fc00000;
 
-    public ChimpNDecompressor(ByteBufferBitInput2 input, int previousValues) {
+    public ChimpNDecompressor32(ByteBufferBitInput2 input, int previousValues) {
         in = input;
         this.previousValues = previousValues;
         this.previousValuesLog2 =  (int)(Math.log(previousValues) / Math.log(2));
-        this.storedValues = new long[previousValues];
+        this.storedValues = new int[previousValues];
     }
 
     /**
@@ -37,20 +37,20 @@ public class ChimpNDecompressor {
      *
      * @return Pair if there's next value, null if series is done.
      */
-    public Double readValue() {
+    public Float readValue() {
         next();
         if(endOfStream) {
             return null;
         }
-        return Double.longBitsToDouble(storedVal);
+        return Float.intBitsToFloat(storedVal);
     }
 
     private void next() {
         if (first) {
         	first = false;
-            storedVal = in.getLong(64);
+            storedVal = in.getInt(32);
             storedValues[current] = storedVal;
-            if (storedValues[current] == NAN_LONG) {
+            if (storedValues[current] == NAN_INT) {
             	endOfStream = true;
             	return;
             }
@@ -61,18 +61,20 @@ public class ChimpNDecompressor {
     }
 
     private void nextValue() {
-        // Read value
-    	int flag = (int) in.getLong(2);
-    	if (flag == 3) {
-    		storedLeadingZeros = leadingRepresentation[(int) in.getLong(3)];
-    		int significantBits = 64 - storedLeadingZeros;
-            if(significantBits == 0) {
-                significantBits = 64;
+        if (in.readBit()) {
+            if (in.readBit()) {
+                // New leading zeros
+            	storedLeadingZeros = leadingRepresentation[in.getInt(3)];
+            } else {
             }
-            long value = in.getLong(64 - storedLeadingZeros);
+            int significantBits = 32 - storedLeadingZeros;
+            if(significantBits == 0) {
+                significantBits = 32;
+            }
+            int value = in.getInt(32 - storedLeadingZeros);
             value = storedVal ^ value;
 
-            if (value == NAN_LONG) {
+            if (value == NAN_INT) {
             	endOfStream = true;
             	return;
             } else {
@@ -80,37 +82,22 @@ public class ChimpNDecompressor {
             	current = (current + 1) % previousValues;
     			storedValues[current] = storedVal;
             }
-    	} else if (flag == 2) {
-    		int significantBits = 64 - storedLeadingZeros;
-            if(significantBits == 0) {
-                significantBits = 64;
-            }
-            long value = in.getLong(64 - storedLeadingZeros);
-            value = storedVal ^ value;
 
-            if (value == NAN_LONG) {
-            	endOfStream = true;
-            	return;
-            } else {
-            	storedVal = value;
-            	current = (current + 1) % previousValues;
-    			storedValues[current] = storedVal;
-            }
-		} else if (flag == 1) {
-			int fill = previousValuesLog2 + 9;
-        	int temp = (int) in.getLong(fill);
+        } else if (in.readBit()) {
+        	int fill = previousValuesLog2 + 8;
+        	int temp = in.getInt(fill);
         	int index = temp >>> (fill -= previousValuesLog2) & (1 << previousValuesLog2) - 1;
         	storedLeadingZeros = leadingRepresentation[temp >>> (fill -= 3) & (1 << 3) - 1];
-        	int significantBits = temp >>> (fill -= 6) & (1 << 6) - 1;
+        	int significantBits = temp >>> (fill -= 5) & (1 << 5) - 1;
         	storedVal = storedValues[index];
         	if(significantBits == 0) {
-                significantBits = 64;
+                significantBits = 32;
             }
-            storedTrailingZeros = 64 - significantBits - storedLeadingZeros;
-            long value = in.getLong(64 - storedLeadingZeros - storedTrailingZeros);
+            storedTrailingZeros = 32 - significantBits - storedLeadingZeros;
+            int value = in.getInt(32 - storedLeadingZeros - storedTrailingZeros);
             value <<= storedTrailingZeros;
             value = storedVal ^ value;
-            if (value == NAN_LONG) {
+            if (value == NAN_INT) {
             	endOfStream = true;
             	return;
             } else {
@@ -118,13 +105,13 @@ public class ChimpNDecompressor {
     			current = (current + 1) % previousValues;
     			storedValues[current] = storedVal;
             }
-		} else {
+        } else {
             // else -> same value as before
-            int index = (int) in.getLong(previousValuesLog2);
+            int index = in.getInt(previousValuesLog2);
             storedVal = storedValues[index];
             current = (current + 1) % previousValues;
     		storedValues[current] = storedVal;
-		}
+        }
     }
 
 }

@@ -126,46 +126,46 @@ public class CompressTest {
 		System.out.println("CHIMP");
 	}
 
-	@Test
-	public void testSizeChimp128ForBaselTemp() throws IOException {
-		System.out.println("CHIMP128");
-		String filename = "/basel-temp.csv.gz";
-		TimeseriesFileReader timeseriesFileReader = new TimeseriesFileReader(this.getClass().getResourceAsStream(filename));
-		long totalSize = 0;
-		float totalBlocks = 0;
-		double[] values;
-		long duration = 0;
-		while ((values = timeseriesFileReader.nextBlockArray()) != null || totalBlocks < 50000) {
-			if (values == null) {
-				timeseriesFileReader = new TimeseriesFileReader(this.getClass().getResourceAsStream(filename));
-				values = timeseriesFileReader.nextBlockArray();
-			}
-			ByteBufferBitOutput output = new ByteBufferBitOutput();
-			ChimpN compressor = new ChimpN(output, 128);
-			long start = System.nanoTime();
-			for (double value : values) {
-				compressor.addValue(value);
-			}
-	        compressor.close();
-	        duration += System.nanoTime() - start;
-	        totalSize += compressor.getSize();
-	        totalBlocks += 1;
-
-	        ByteBuffer byteBuffer = output.getByteBuffer();
-	        byteBuffer.flip();
-	        ByteBufferBitInput input = new ByteBufferBitInput(byteBuffer);
-	        ChimpNDecompressor d = new ChimpNDecompressor(input, 128);
-	        for(Double value : values) {
-	            fi.iki.yak.ts.compression.gorilla.Value pair = d.readPair();
-	            assertEquals(value.doubleValue(), pair.getDoubleValue(), "Value did not match");
-	        }
-	        assertNull(d.readPair());
-
-		}
-		System.out.println(duration);
-		System.out.println(String.format("%s - Size 64: %d, Bits/value: %.2f, Compression time per block: %.2f", filename, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE), duration / totalBlocks));
-		System.out.println("CHIMP128");
-	}
+//	@Test
+//	public void testSizeChimp128ForBaselTemp() throws IOException {
+//		System.out.println("CHIMP128");
+//		String filename = "/basel-temp.csv.gz";
+//		TimeseriesFileReader timeseriesFileReader = new TimeseriesFileReader(this.getClass().getResourceAsStream(filename));
+//		long totalSize = 0;
+//		float totalBlocks = 0;
+//		double[] values;
+//		long duration = 0;
+//		while ((values = timeseriesFileReader.nextBlockArray()) != null || totalBlocks < 50000) {
+//			if (values == null) {
+//				timeseriesFileReader = new TimeseriesFileReader(this.getClass().getResourceAsStream(filename));
+//				values = timeseriesFileReader.nextBlockArray();
+//			}
+//			ByteBufferBitOutput output = new ByteBufferBitOutput();
+//			ChimpN compressor = new ChimpN(output, 128);
+//			long start = System.nanoTime();
+//			for (double value : values) {
+//				compressor.addValue(value);
+//			}
+//	        compressor.close();
+//	        duration += System.nanoTime() - start;
+//	        totalSize += compressor.getSize();
+//	        totalBlocks += 1;
+//
+//	        ByteBuffer byteBuffer = output.getByteBuffer();
+//	        byteBuffer.flip();
+//	        ByteBufferBitInput input = new ByteBufferBitInput(byteBuffer);
+//	        ChimpNDecompressor d = new ChimpNDecompressor(input, 128);
+//	        for(Double value : values) {
+//	            fi.iki.yak.ts.compression.gorilla.Value pair = d.readPair();
+//	            assertEquals(value.doubleValue(), pair.getDoubleValue(), "Value did not match");
+//	        }
+//	        assertNull(d.readPair());
+//
+//		}
+//		System.out.println(duration);
+//		System.out.println(String.format("%s - Size 64: %d, Bits/value: %.2f, Compression time per block: %.2f", filename, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE), duration / totalBlocks));
+//		System.out.println("CHIMP128");
+//	}
 
 
 	@Test
