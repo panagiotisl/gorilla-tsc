@@ -13,6 +13,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.hadoop.conf.Configurable;
@@ -37,6 +40,8 @@ import fi.iki.yak.ts.compression.gorilla.ByteBufferBitInput2;
 import fi.iki.yak.ts.compression.gorilla.ByteBufferBitOutput;
 import fi.iki.yak.ts.compression.gorilla.Compressor;
 import fi.iki.yak.ts.compression.gorilla.Decompressor;
+import gr.aueb.compression.gorilla.PmcMR.Constant;
+import gr.aueb.compression.gorilla.SwingFilter.SwingSegment;
 
 /**
  * These are generic tests to test that input matches the output after compression + decompression cycle, using
@@ -89,11 +94,24 @@ public class CompressBenchmark {
 	@BeforeAll
 	public static void setUp() {
 		FILENAME = "/home/panagiotis/timeseries/Stocks-UK.txt.gz";
+		FILENAME = "/home/panagiotis/timeseries/Stocks-USA.txt.gz";
+		FILENAME = "/home/panagiotis/timeseries/Stocks-Gernamy.txt.gz";
 		FILENAME = "/home/panagiotis/timeseries/basel-temp.csv.gz";
-		FILENAME = "/home/panagiotis/timeseries/foodprices.csv.gz";
-		FILENAME = "/home/panagiotis/timeseries/poi-lat.csv.gz";
+		FILENAME = "/home/panagiotis/timeseries/basel-wind-speed.csv.gz";
+		FILENAME = "/home/panagiotis/timeseries/air-sensor-data.csv.gz";
+		FILENAME = "/home/panagiotis/timeseries/bird-migration-data.csv.gz";
+		FILENAME = "/home/panagiotis/timeseries/bitcoin-price-data.csv.gz";
+		FILENAME = "/home/panagiotis/timeseries/NEON_pressure-air_staPresMean.csv.gz";
+		FILENAME = "/home/panagiotis/timeseries/NEON_rel-humidity-buoy-dewTempMean.csv.gz";
+		FILENAME = "/home/panagiotis/timeseries/NEON_size-dust-particulate-PM10Median.csv.gz";
+		FILENAME = "/home/panagiotis/timeseries/NEON_temp-bio-bioTempMean.csv.gz";
+		FILENAME = "/home/panagiotis/timeseries/NEON_wind-2d_windDirMean.csv.gz";
+//		FILENAME = "/home/panagiotis/timeseries/city_temperature-fixed.csv.gz";
+//
+//		FILENAME = "/home/panagiotis/timeseries/foodprices.csv.gz";
+//		FILENAME = "/home/panagiotis/timeseries/poi-lat.csv.gz";
 //		FILENAME = "/home/panagiotis/timeseries/poi-lon.csv.gz";
-		//FILENAME = "/home/panagiotis/timeseries/bitcoin-transactions-output.csv.gz";
+//		FILENAME = "/home/panagiotis/timeseries/bitcoin-transactions-output.csv.gz";
 //		FILENAME = "/home/panagiotis/timeseries/SSD_HDD_benchmarks.csv.gz";
 	}
 	
@@ -597,7 +615,87 @@ public class CompressBenchmark {
 		System.out.println(String.format("Brotli: %s - Bits/value: %.2f, Compression time per block: %.2f, Decompression time per block: %.2f", FILENAME, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE), encodingDuration / totalBlocks, decodingDuration / totalBlocks));
 	}
 
+
+
+	@Test
+	public void testPmcMRFilter() throws IOException {
+		for (int logOfError = -10; logOfError < 10; logOfError++) {
+			TimeseriesFileReader timeseriesFileReader = new TimeseriesFileReader(new FileInputStream(new File(FILENAME)));
+			double[] values;
+			double maxValue = Double.MIN_VALUE;
+			double minValue = Double.MAX_VALUE;
+			int timestamp = 0;
+			double maxPrecisionError = 0;
+			int totalSize = 0;
+			float totalBlocks = 0;
+			while ((values = timeseriesFileReader.nextBlock()) != null) {
+				Collection<Point> points = new ArrayList<>();
+				for (Double value : values) {
+					points.add(new Point(timestamp++, value.floatValue()));
+				}
+				List<Constant> constants = new PmcMR().filter(points, ((float) Math.pow(2, logOfError)));
+
+		        totalBlocks += 1;
+		        totalSize += constants.size() * 2 * 32;
+
+		        DecompressorPmcMr d = new DecompressorPmcMr(constants);
+
+		        for(Double value : values) {
+		        	maxValue = value > maxValue ? value : maxValue;
+		        	minValue = value < minValue ? value : minValue;
+		            Float decompressedValue = d.readValue();
+		            double precisionError = Math.abs(value.doubleValue() - decompressedValue);
+		            maxPrecisionError = (precisionError > maxPrecisionError) ? precisionError : maxPrecisionError;
+		            assertEquals(value.doubleValue(), decompressedValue, Math.pow(2, logOfError), "Value did not match");
+		        }
+
+			}
+			System.out.println(String.format("PMC-MR %s - Size : %d, Bits/value: %.2f, error: %f, Range: %.2f, (%.2f%%)",
+					FILENAME, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE), maxPrecisionError, (maxValue - minValue), 100* maxPrecisionError / (maxValue - minValue)));
+		}
+
+	}
 	
+	@Test
+	public void testSwingFilter() throws IOException {
+		for (int logOfError = -10; logOfError < 10; logOfError++) {
+			TimeseriesFileReader timeseriesFileReader = new TimeseriesFileReader(new FileInputStream(new File(FILENAME)));
+			double[] values;
+			double maxValue = Double.MIN_VALUE;
+			double minValue = Double.MAX_VALUE;
+			int timestamp = 0;
+			double maxPrecisionError = 0;
+			int totalSize = 0;
+			float totalBlocks = 0;
+			while ((values = timeseriesFileReader.nextBlock()) != null) {
+				Collection<Point> points = new ArrayList<>();
+				for (Double value : values) {
+					points.add(new Point(timestamp++, value.floatValue()));
+				}
+				List<SwingSegment> segments = new SwingFilter().filter(points, ((float) Math.pow(2, logOfError)));
+
+		        totalBlocks += 1;
+		        totalSize += segments.size() * (2 * 64 + 32);
+
+		        DecompressorSwingFilter d = new DecompressorSwingFilter(segments);
+
+		        for(Double value : values) {
+		        	maxValue = value > maxValue ? value : maxValue;
+		        	minValue = value < minValue ? value : minValue;
+		            Float decompressedValue = d.readValue();
+		            double precisionError = Math.abs(value.doubleValue() - decompressedValue);
+		            maxPrecisionError = (precisionError > maxPrecisionError) ? precisionError : maxPrecisionError;
+		            assertEquals(value.doubleValue(), decompressedValue, Math.pow(2, logOfError + 10), "Value did not match");
+		        }
+
+			}
+			System.out.println(String.format("SwingFilter %s - Size : %d, Bits/value: %.2f, error: %f, Range: %.2f, (%.2f%%)",
+					FILENAME, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE), maxPrecisionError, (maxValue - minValue), 100* maxPrecisionError / (maxValue - minValue)));
+		}
+
+	}
+
+
 	public static double[] toDoubleArray(byte[] byteArray){
 	    int times = Double.SIZE / Byte.SIZE;
 	    double[] doubles = new double[byteArray.length / times];
