@@ -19,6 +19,8 @@ public class ChimpDecompressor32 {
 
     private final static int NAN_INT = 0x7fc00000;
 
+	public final static short[] leadingRepresentation = {0, 8, 12, 16, 18, 20, 22, 24};
+    
     public ChimpDecompressor32(BitInput input) {
         in = input;
     }
@@ -182,7 +184,7 @@ public class ChimpDecompressor32 {
         if (in.readBit()) {
             if (in.readBit()) {
                 // New leading zeros
-                storedLeadingZeros = getLeading((int) in.getLong(3));
+                storedLeadingZeros = leadingRepresentation[(int) in.getLong(3)];
             }
             int significantBits = 32 - storedLeadingZeros;
             if(significantBits == 0) {
@@ -198,7 +200,7 @@ public class ChimpDecompressor32 {
             }
 
         } else if (in.readBit()) {
-        	storedLeadingZeros = getLeading((int) in.getLong(3));
+        	storedLeadingZeros = leadingRepresentation[(int) in.getLong(3)];
         	byte significantBits = (byte) in.getLong(5);
         	if(significantBits == 0) {
                 significantBits = 32;
@@ -216,28 +218,5 @@ public class ChimpDecompressor32 {
         }
         // else -> same value as before
     }
-
-	private int getLeading(int bits) {
-		switch (bits) {
-		case 0:
-			return 0;
-		case 1:
-			return 8;
-		case 2:
-			return 12;
-		case 3:
-			return 16;
-		case 4:
-			return 18;
-		case 5:
-			return 20;
-		case 6:
-			return 22;
-		case 7:
-			return 24;
-		}
-		return 0;
-
-	}
 
 }
