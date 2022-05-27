@@ -6,7 +6,7 @@ package gr.aueb.compression.gorilla;
  *
  * @author Panagiotis Liakos
  */
-public class ChimpN {
+public class ChimpNNoIndex {
 
     private int storedLeadingZeros = Integer.MAX_VALUE;
     private long storedValues[];
@@ -40,23 +40,19 @@ public class ChimpN {
     private OutputBitStream out;
 	private int previousValues;
 
-	private int setLsb;
-	private int[] indices;
 	private int index = 0;
 	private int current = 0;
 	private int flagOneSize;
 	private int flagZeroSize;
 
     // We should have access to the series?
-    public ChimpN(int previousValues) {
+    public ChimpNNoIndex(int previousValues) {
 //        out = output;
     	out = new OutputBitStream(new byte[1000*8]);
         size = 0;
         this.previousValues = previousValues;
         this.previousValuesLog2 =  (int)(Math.log(previousValues) / Math.log(2));
         this.threshold = 6 + previousValuesLog2;
-        this.setLsb = (int) Math.pow(2, threshold + 1) - 1;
-        this.indices = new int[(int) Math.pow(2, threshold + 1)];
         this.storedValues = new long[previousValues];
         this.flagZeroSize = previousValuesLog2 + 2;
         this.flagOneSize = previousValuesLog2 + 11;
@@ -96,7 +92,6 @@ public class ChimpN {
     	first = false;
         storedValues[current] = value;
         out.writeLong(storedValues[current], 64);
-        indices[(int) value & setLsb] = index;
         size += 64;
     }
 
@@ -110,25 +105,23 @@ public class ChimpN {
     }
 
     private void compressValue(long value) {
-    	int key = (int) value & setLsb;
     	long xor;
     	int previousIndex;
     	int trailingZeros = 0;
-    	int currIndex = indices[key];
-    	if ((index - currIndex) < previousValues) {
-    		long tempXor = value ^ storedValues[currIndex % previousValues];
-    		trailingZeros = Long.numberOfTrailingZeros(tempXor);
-    		if (trailingZeros > threshold) {
-    			previousIndex = currIndex % previousValues;
+    	previousIndex =  index % previousValues;
+		xor = storedValues[previousIndex] ^ value;
+		int maxTrailingZeros = 0;
+		for (int i=0; i<previousValues; i++) {
+			long tempXor = value ^ storedValues[i];
+			int tempTrailingZeros = Long.numberOfTrailingZeros(tempXor);
+			if (tempTrailingZeros > threshold && tempTrailingZeros > maxTrailingZeros) {
+				maxTrailingZeros = tempTrailingZeros;
     			xor = tempXor;
-    		} else {
-    			previousIndex =  index % previousValues;
-    			xor = storedValues[previousIndex] ^ value;
-    		}
-    	} else {
-    		previousIndex =  index % previousValues;
-    		xor = storedValues[previousIndex] ^ value;
-    	}
+    			trailingZeros = maxTrailingZeros;
+    			previousIndex = i;
+
+			}
+		}
 
         if(xor == 0) {
             out.writeInt(previousIndex, this.flagZeroSize);
@@ -159,7 +152,6 @@ public class ChimpN {
         current = (current + 1) % previousValues;
         storedValues[current] = value;
 		index++;
-		indices[key] = index;
 
     }
 

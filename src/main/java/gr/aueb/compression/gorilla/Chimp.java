@@ -1,7 +1,5 @@
 package gr.aueb.compression.gorilla;
 
-import fi.iki.yak.ts.compression.gorilla.BitOutput;
-
 /**
  * Implements the Chimp time series compression. Value compression
  * is for floating points only.
@@ -38,11 +36,11 @@ public class Chimp {
 		};
 //    public final static short FIRST_DELTA_BITS = 27;
 
-    private BitOutput out;
+    private OutputBitStream out;
 
     // We should have access to the series?
-    public Chimp(BitOutput output) {
-        out = output;
+    public Chimp() {
+        out = new OutputBitStream(new byte[1000*8]);
         size = 0;
     }
 
@@ -75,7 +73,7 @@ public class Chimp {
     private void writeFirst(long value) {
     	first = false;
         storedVal = value;
-        out.writeBits(storedVal, 64);
+        out.writeLong(storedVal, 64);
         size += 64;
     }
 
@@ -84,7 +82,7 @@ public class Chimp {
      */
     public void close() {
     	addValue(Double.NaN);
-        out.skipBit();
+    	out.writeBit(false);
         out.flush();
     }
 
@@ -92,31 +90,36 @@ public class Chimp {
     	long xor = storedVal ^ value;
         if(xor == 0) {
             // Write 0
-            out.skipBit();
-            out.skipBit();
+        	out.writeBit(false);
+        	out.writeBit(false);
             size += 2;
             storedLeadingZeros = 65;
         } else {
-            int leadingZeros = Long.numberOfLeadingZeros(xor);
+            int leadingZeros = leadingRound[Long.numberOfLeadingZeros(xor)];
             int trailingZeros = Long.numberOfTrailingZeros(xor);
 
             if (trailingZeros > THRESHOLD) {
-                int significantBits = 64 - leadingRound[leadingZeros] - trailingZeros;
-                out.writeBits(64 * (8 + leadingRepresentation[leadingZeros]) + significantBits, 11);
-                out.writeBits(xor >>> trailingZeros, significantBits); // Store the meaningful bits of XOR
+                int significantBits = 64 - leadingZeros - trailingZeros;
+                out.writeBit(false);
+                out.writeBit(true);
+                out.writeInt(leadingRepresentation[leadingZeros], 3);
+                out.writeInt(significantBits, 6);
+                out.writeLong(xor >>> trailingZeros, significantBits); // Store the meaningful bits of XOR
                 size += 11 + significantBits;
     			storedLeadingZeros = 65;
-    		} else if (leadingRound[leadingZeros] == storedLeadingZeros) {
-    			out.writeBit();
-    			out.skipBit();
-    			int significantBits = 64 - leadingRound[leadingZeros];
-    			out.writeBits(xor, significantBits);
+    		} else if (leadingZeros == storedLeadingZeros) {
+    			out.writeBit(true);
+    			out.writeBit(false);
+    			int significantBits = 64 - leadingZeros;
+    			out.writeLong(xor, significantBits);
     			size += 2 + significantBits;
     		} else {
-    			storedLeadingZeros = leadingRound[leadingZeros];
-    			int significantBits = 64 - leadingRound[leadingZeros];
-    			out.writeBits(24 + leadingRepresentation[leadingZeros], 5);
-    			out.writeBits(xor, significantBits);
+    			storedLeadingZeros = leadingZeros;
+    			int significantBits = 64 - leadingZeros;
+    			out.writeBit(true);
+    			out.writeBit(true);
+    			out.writeInt(leadingRepresentation[leadingZeros], 3);
+    			out.writeLong(xor, significantBits);
     			size += 5 + significantBits;
     		}
     	}
@@ -126,4 +129,8 @@ public class Chimp {
     public int getSize() {
     	return size;
     }
+
+	public byte[] getOut() {
+		return out.buffer;
+	}
 }

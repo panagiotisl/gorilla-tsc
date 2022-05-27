@@ -1,7 +1,5 @@
 package gr.aueb.compression.gorilla;
 
-import fi.iki.yak.ts.compression.gorilla.BitOutput;
-
 /**
  * Implements the Chimp128 time series compression. Value compression
  * is for floating points only.
@@ -38,7 +36,7 @@ public class ChimpN32 {
 		};
 //    public final static short FIRST_DELTA_BITS = 27;
 
-    private BitOutput out;
+    private OutputBitStream out;
 	private int previousValues;
 
 	private int setLsb;
@@ -47,8 +45,8 @@ public class ChimpN32 {
 	private int current = 0;
 
     // We should have access to the series?
-    public ChimpN32(BitOutput output, int previousValues) {
-        out = output;
+    public ChimpN32(int previousValues) {
+        out = new OutputBitStream(new byte[1000*4]);
         size = 0;
         this.previousValues = previousValues;
         this.previousValuesLog2 =  (int)(Math.log(previousValues) / Math.log(2));
@@ -87,7 +85,7 @@ public class ChimpN32 {
     private void writeFirst(int value) {
     	first = false;
         storedValues[current] = value;
-        out.writeBits(storedValues[current], 32);
+        out.writeInt(storedValues[current], 32);
         indices[value & setLsb] = index;
         size += 32;
     }
@@ -97,7 +95,7 @@ public class ChimpN32 {
      */
     public void close() {
     	addValue(Float.NaN);
-        out.skipBit();
+    	out.writeBit(false);
         out.flush();
     }
 
@@ -127,9 +125,9 @@ public class ChimpN32 {
 
         if(xor == 0) {
             // Write 0
-            out.skipBit();
-            out.skipBit();
-            out.writeBits(previousIndex, previousValuesLog2);
+        	out.writeBit(false);
+        	out.writeBit(false);
+            out.writeInt(previousIndex, previousValuesLog2);
             size += 2 + previousValuesLog2;
             storedLeadingZeros = 33;
         } else {
@@ -137,21 +135,21 @@ public class ChimpN32 {
 
             if (trailingZeros > threshold) {
                 int significantBits = 32 - leadingRound[leadingZeros] - trailingZeros;
-                out.writeBits(256 * (previousValues + previousIndex) + 32 * leadingRepresentation[leadingZeros] + significantBits, previousValuesLog2 + 10);
-                out.writeBits(xor >>> trailingZeros, significantBits); // Store the meaningful bits of XOR
+                out.writeInt(256 * (previousValues + previousIndex) + 32 * leadingRepresentation[leadingZeros] + significantBits, previousValuesLog2 + 10);
+                out.writeInt(xor >>> trailingZeros, significantBits); // Store the meaningful bits of XOR
                 size += 10 + significantBits + previousValuesLog2;
     			storedLeadingZeros = 33;
     		} else if (leadingRound[leadingZeros] == storedLeadingZeros) {
-    			out.writeBit();
-    			out.skipBit();
+    			out.writeBit(true);
+    			out.writeBit(false);
     			int significantBits = 32 - leadingRound[leadingZeros];
-    			out.writeBits(xor, significantBits);
+    			out.writeInt(xor, significantBits);
     			size += 2 + significantBits;
     		} else {
     			storedLeadingZeros = leadingRound[leadingZeros];
     			int significantBits = 32 - leadingRound[leadingZeros];
-    			out.writeBits(16 + 8 + leadingRepresentation[leadingZeros], 5);
-    			out.writeBits(xor, significantBits);
+    			out.writeInt(16 + 8 + leadingRepresentation[leadingZeros], 5);
+    			out.writeInt(xor, significantBits);
     			size += 5 + significantBits;
     		}
     	}
@@ -165,4 +163,8 @@ public class ChimpN32 {
     public int getSize() {
     	return size;
     }
+    
+    public byte[] getOut() {
+		return out.buffer;
+	}
 }

@@ -1,12 +1,12 @@
 package gr.aueb.compression.gorilla;
 
-import fi.iki.yak.ts.compression.gorilla.BitInput;
-import fi.iki.yak.ts.compression.gorilla.Value;
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Decompresses a compressed stream created by the Compressor. Returns pairs of timestamp and floating point value.
  *
- * @author Michael Burman
  */
 public class ChimpDecompressor {
 
@@ -16,33 +16,47 @@ public class ChimpDecompressor {
     private boolean first = true;
     private boolean endOfStream = false;
 
-    private BitInput in;
+    private InputBitStream in;
 
     private final static long NAN_LONG = 0x7ff8000000000000L;
 
 	public final static short[] leadingRepresentation = {0, 8, 12, 16, 18, 20, 22, 24};
 
-    public ChimpDecompressor(BitInput input) {
-        in = input;
+    public ChimpDecompressor(byte[] bs) {
+        in = new InputBitStream(bs);
     }
 
+    public List<Double> getValues() {
+    	List<Double> list = new LinkedList<>();
+    	Double value = readValue();
+    	while (value != null) {
+    		list.add(value);
+    		value = readValue();
+    	}
+    	return list;
+    }
+    
     /**
      * Returns the next pair in the time series, if available.
      *
      * @return Pair if there's next value, null if series is done.
      */
-    public Value readPair() {
-        next();
+    public Double readValue() {
+        try {
+			next();
+		} catch (IOException e) {
+			throw new RuntimeException(e.getMessage());
+		}
         if(endOfStream) {
             return null;
         }
-        return new Value(storedVal);
+        return Double.longBitsToDouble(storedVal);
     }
 
-    private void next() {
+    private void next() throws IOException {
         if (first) {
         	first = false;
-            storedVal = in.getLong(64);
+            storedVal = in.readLong(64);
             if (storedVal == NAN_LONG) {
             	endOfStream = true;
             	return;
@@ -53,20 +67,21 @@ public class ChimpDecompressor {
         }
     }
 
-    private void nextValue() {
+    private void nextValue() throws IOException {
 
-
+    	int significantBits;
+    	long value;
         // Read value
-        if (in.readBit()) {
-            if (in.readBit()) {
-                // New leading zeros
-                storedLeadingZeros = getLeading((int) in.getLong(3));
-            }
-            int significantBits = 64 - storedLeadingZeros;
+    	int flag = in.readInt(2);
+    	switch(flag) {
+    	case 3:
+            // New leading zeros
+            storedLeadingZeros = leadingRepresentation[in.readInt(3)];
+            significantBits = 64 - storedLeadingZeros;
             if(significantBits == 0) {
                 significantBits = 64;
             }
-            long value = in.getLong(64 - storedLeadingZeros);
+            value = in.readLong(64 - storedLeadingZeros);
             value = storedVal ^ value;
             if (value == NAN_LONG) {
             	endOfStream = true;
@@ -74,15 +89,29 @@ public class ChimpDecompressor {
             } else {
             	storedVal = value;
             }
-
-        } else if (in.readBit()) {
-        	storedLeadingZeros = getLeading((int) in.getLong(3));
-        	byte significantBits = (byte) in.getLong(6);
+            break;
+    	case 2:
+    		significantBits = 64 - storedLeadingZeros;
+            if(significantBits == 0) {
+                significantBits = 64;
+            }
+            value = in.readLong(64 - storedLeadingZeros);
+            value = storedVal ^ value;
+            if (value == NAN_LONG) {
+            	endOfStream = true;
+            	return;
+            } else {
+            	storedVal = value;
+            }
+    		break;
+    	case 1:
+    		storedLeadingZeros = leadingRepresentation[in.readInt(3)];
+        	significantBits = in.readInt(6);
         	if(significantBits == 0) {
                 significantBits = 64;
             }
             storedTrailingZeros = 64 - significantBits - storedLeadingZeros;
-            long value = in.getLong(64 - storedLeadingZeros - storedTrailingZeros);
+            value = in.readLong(64 - storedLeadingZeros - storedTrailingZeros);
             value <<= storedTrailingZeros;
             value = storedVal ^ value;
             if (value == NAN_LONG) {
@@ -91,31 +120,9 @@ public class ChimpDecompressor {
             } else {
             	storedVal = value;
             }
-        }
-        // else -> same value as before
+    		break;
+		default:
+    	}
     }
-
-	private int getLeading(int bits) {
-		switch (bits) {
-		case 0:
-			return 0;
-		case 1:
-			return 8;
-		case 2:
-			return 12;
-		case 3:
-			return 16;
-		case 4:
-			return 18;
-		case 5:
-			return 20;
-		case 6:
-			return 22;
-		case 7:
-			return 24;
-		}
-		return 0;
-
-	}
 
 }

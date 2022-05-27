@@ -96,6 +96,11 @@
 		    <artifactId>netty-buffer</artifactId>
 		    <version>4.1.45.Final</version>
 		</dependency>
+		<dependency>
+		  <groupId>com.github.devnied</groupId>
+		  <artifactId>bit-lib4j</artifactId>
+		  <version>1.5.2</version>
+		</dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>

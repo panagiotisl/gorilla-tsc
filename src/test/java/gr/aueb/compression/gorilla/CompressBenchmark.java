@@ -36,7 +36,6 @@ import org.junit.jupiter.api.Test;
 
 import fi.iki.yak.ts.compression.gorilla.BitInput;
 import fi.iki.yak.ts.compression.gorilla.ByteBufferBitInput;
-import fi.iki.yak.ts.compression.gorilla.ByteBufferBitInput2;
 import fi.iki.yak.ts.compression.gorilla.ByteBufferBitOutput;
 import fi.iki.yak.ts.compression.gorilla.Compressor;
 import fi.iki.yak.ts.compression.gorilla.Decompressor;
@@ -128,8 +127,7 @@ public class CompressBenchmark {
 				timeseriesFileReader = new TimeseriesFileReader(new FileInputStream(new File(FILENAME)));
 				values = timeseriesFileReader.nextBlock();
 			}
-			ByteBufferBitOutput output = new ByteBufferBitOutput();
-			Chimp compressor = new Chimp(output);
+			Chimp compressor = new Chimp();
 			long start = System.nanoTime();
 			for (double value : values) {
 				compressor.addValue(value);
@@ -139,19 +137,14 @@ public class CompressBenchmark {
 	        totalSize += compressor.getSize();
 	        totalBlocks += 1;
 
-	        ByteBuffer byteBuffer = output.getByteBuffer();
-	        byteBuffer.flip();
-	        byte[] arr = new byte[byteBuffer.remaining()];
-	        byteBuffer.get(arr);
-	        ByteBufferBitInput2 input = new ByteBufferBitInput2(new InputBitStream(arr));
-	        ChimpDecompressor d = new ChimpDecompressor(input);
+	        ChimpDecompressor d = new ChimpDecompressor(compressor.getOut());
 	        for(Double value : values) {
 	        	start = System.nanoTime();
-	            fi.iki.yak.ts.compression.gorilla.Value pair = d.readPair();
+	            Double pair = d.readValue();
 	            decodingDuration += System.nanoTime() - start;
-	            assertEquals(value.doubleValue(), pair.getDoubleValue(), "Value did not match");
+	            assertEquals(value.doubleValue(), pair.doubleValue(), "Value did not match");
 	        }
-	        assertNull(d.readPair());
+	        assertNull(d.readValue());
 
 		}
 		System.out.println(String.format("Chimp: %s - Bits/value: %.2f, Compression time per block: %.2f, Decompression time per block: %.2f", FILENAME, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE), encodingDuration / totalBlocks, decodingDuration / totalBlocks));
@@ -170,8 +163,7 @@ public class CompressBenchmark {
 				timeseriesFileReader = new TimeseriesFileReader(new FileInputStream(new File(FILENAME)));
 				values = timeseriesFileReader.nextBlock();
 			}
-			ByteBufferBitOutput output = new ByteBufferBitOutput();
-			Chimp32 compressor = new Chimp32(output);
+			Chimp32 compressor = new Chimp32();
 			long start = System.nanoTime();
 			for (double value : values) {
 				compressor.addValue((float) value);
@@ -181,12 +173,7 @@ public class CompressBenchmark {
 	        totalSize += compressor.getSize();
 	        totalBlocks += 1;
 
-	        ByteBuffer byteBuffer = output.getByteBuffer();
-	        byteBuffer.flip();
-	        byte[] arr = new byte[byteBuffer.remaining()];
-	        byteBuffer.get(arr);
-	        ByteBufferBitInput2 input = new ByteBufferBitInput2(new InputBitStream(arr));
-	        ChimpDecompressor32 d = new ChimpDecompressor32(input);
+	        ChimpDecompressor32 d = new ChimpDecompressor32(compressor.getOut());
 	        for(Double value : values) {
 	        	start = System.nanoTime();
 	            Value pair = d.readPair();
@@ -212,8 +199,7 @@ public class CompressBenchmark {
 				timeseriesFileReader = new TimeseriesFileReader(new FileInputStream(new File(FILENAME)));
 				values = timeseriesFileReader.nextBlock();
 			}
-			ByteBufferBitOutput output = new ByteBufferBitOutput();
-			ChimpN32 compressor = new ChimpN32(output, 32);
+			ChimpN32 compressor = new ChimpN32(32);
 			long start = System.nanoTime();
 			for (double value : values) {
 				compressor.addValue((float) value);
@@ -223,12 +209,7 @@ public class CompressBenchmark {
 	        totalSize += compressor.getSize();
 	        totalBlocks += 1;
 
-	        ByteBuffer byteBuffer = output.getByteBuffer();
-	        byteBuffer.flip();
-	        byte[] arr = new byte[byteBuffer.remaining()];
-	        byteBuffer.get(arr);
-	        ByteBufferBitInput2 input = new ByteBufferBitInput2(new InputBitStream(arr));
-	        ChimpNDecompressor32 d = new ChimpNDecompressor32(input, 128);
+	        ChimpNDecompressor32 d = new ChimpNDecompressor32(compressor.getOut(), 128);
 	        for(Double value : values) {
 	        	start = System.nanoTime();
 	            Float pair = d.readValue();
@@ -254,8 +235,7 @@ public class CompressBenchmark {
 				timeseriesFileReader = new TimeseriesFileReader(new FileInputStream(new File(FILENAME)));
 				values = timeseriesFileReader.nextBlock();
 			}
-			ByteBufferBitOutput output = new ByteBufferBitOutput();
-			ChimpN compressor = new ChimpN(output, 128);
+			ChimpN compressor = new ChimpN(128);
 			long start = System.nanoTime();
 			for (double value : values) {
 				compressor.addValue(value);
@@ -265,12 +245,7 @@ public class CompressBenchmark {
 	        totalSize += compressor.getSize();
 	        totalBlocks += 1;
 
-	        ByteBuffer byteBuffer = output.getByteBuffer();
-	        byteBuffer.flip();
-	        byte[] arr = new byte[byteBuffer.remaining()];
-	        byteBuffer.get(arr);
-	        ByteBufferBitInput2 input = new ByteBufferBitInput2(new InputBitStream(arr));
-	        ChimpNDecompressor d = new ChimpNDecompressor(input, 128);
+	        ChimpNDecompressor d = new ChimpNDecompressor(compressor.getOut(), 128);
 	        for(Double value : values) {
 	        	start = System.nanoTime();
 	            Double pair = d.readValue();

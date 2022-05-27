@@ -1,5 +1,8 @@
 package fi.iki.yak.ts.compression.gorilla;
 
+import java.util.LinkedList;
+import java.util.List;
+
 /**
  * Decompresses a compressed stream created by the Compressor. Returns pairs of timestamp and floating point value.
  *
@@ -21,6 +24,16 @@ public class Decompressor {
         in = input;
     }
 
+    public List<Double> getValues() {
+    	List<Double> list = new LinkedList<>();
+    	Value value = readPair();
+    	while (value != null) {
+    		list.add(value.getDoubleValue());
+    		value = readPair();
+    	}
+    	return list;
+    }
+    
     /**
      * Returns the next pair in the time series, if available.
      *

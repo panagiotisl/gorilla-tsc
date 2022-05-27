@@ -98,8 +98,7 @@ public class CompressTest {
 			double[] values;
 			long duration = 0;
 			while ((values = timeseriesFileReader.nextBlockArray()) != null) {
-				ByteBufferBitOutput output = new ByteBufferBitOutput();
-				Chimp compressor = new Chimp(output);
+				Chimp compressor = new Chimp();
 				long start = System.nanoTime();
 				for (double value : values) {
 					compressor.addValue(value);
@@ -109,15 +108,12 @@ public class CompressTest {
 		        totalSize += compressor.getSize();
 		        totalBlocks += 1;
 
-		        ByteBuffer byteBuffer = output.getByteBuffer();
-		        byteBuffer.flip();
-		        ByteBufferBitInput input = new ByteBufferBitInput(byteBuffer);
-		        ChimpDecompressor d = new ChimpDecompressor(input);
+		        ChimpDecompressor d = new ChimpDecompressor(compressor.getOut());
 		        for(Double value : values) {
-		            fi.iki.yak.ts.compression.gorilla.Value pair = d.readPair();
-		            assertEquals(value.doubleValue(), pair.getDoubleValue(), "Value did not match");
+		            Double pair = d.readValue();
+		            assertEquals(value.doubleValue(), pair.doubleValue(), "Value did not match");
 		        }
-		        assertNull(d.readPair());
+		        assertNull(d.readValue());
 
 			}
 			System.out.println(duration);
@@ -663,6 +659,7 @@ public class CompressTest {
 
 	@Test
 	public void testPmcMRFilterForBaselWindSpeed() throws IOException {
+		
 		for (int logOfError = -10; logOfError < 10; logOfError++) {
 			String filename = "/basel-wind-speed.csv.gz";
 			TimeseriesFileReader timeseriesFileReader = new TimeseriesFileReader(this.getClass().getResourceAsStream(filename));
@@ -672,31 +669,30 @@ public class CompressTest {
 			int timestamp = 0;
 			double maxPrecisionError = 0;
 			int totalSize = 0;
-			float totalBlocks = 0;
+			Collection<Point> points = new ArrayList<>();
 			while ((values = timeseriesFileReader.nextBlock()) != null) {
-				Collection<Point> points = new ArrayList<>();
 				for (Double value : values) {
 					points.add(new Point(timestamp++, value.floatValue()));
 				}
-				List<Constant> constants = new PmcMR().filter(points, ((float) Math.pow(2, logOfError)));
-
-		        totalBlocks += 1;
-		        totalSize += constants.size() * 2 * 32;
-
-		        DecompressorPmcMr d = new DecompressorPmcMr(constants);
-
-		        for(Double value : values) {
-		        	maxValue = value > maxValue ? value : maxValue;
-		        	minValue = value < minValue ? value : minValue;
-		            Float decompressedValue = d.readValue();
-		            double precisionError = Math.abs(value.doubleValue() - decompressedValue);
-		            maxPrecisionError = (precisionError > maxPrecisionError) ? precisionError : maxPrecisionError;
-		            assertEquals(value.doubleValue(), decompressedValue, Math.pow(2, logOfError), "Value did not match");
-		        }
 
 			}
+			List<Constant> constants = new PmcMR().filter(points, ((float) Math.pow(2, logOfError)));
+
+	        totalSize += constants.size() * 2 * 32;
+
+	        DecompressorPmcMr d = new DecompressorPmcMr(constants);
+
+	        for(Point value : points) {
+	        	maxValue = value.getValue() > maxValue ? value.getValue() : maxValue;
+	        	minValue = value.getValue() < minValue ? value.getValue() : minValue;
+	            Float decompressedValue = d.readValue();
+	            double precisionError = Math.abs(value.getValue() - decompressedValue);
+	            maxPrecisionError = (precisionError > maxPrecisionError) ? precisionError : maxPrecisionError;
+	            assertEquals(value.getValue(), decompressedValue, Math.pow(2, logOfError), "Value did not match");
+	        }
+
 			System.out.println(String.format("PMC-MR %s - Size : %d, Bits/value: %.2f, error: %f, Range: %.2f, (%.2f%%)",
-					filename, totalSize, totalSize / (totalBlocks * TimeseriesFileReader.DEFAULT_BLOCK_SIZE), maxPrecisionError, (maxValue - minValue), 100* maxPrecisionError / (maxValue - minValue)));
+					filename, totalSize, totalSize / ((float) points.size()), maxPrecisionError, (maxValue - minValue), 100* maxPrecisionError / (maxValue - minValue)));
 		}
 
 	}
